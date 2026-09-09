@@ -1,0 +1,10 @@
+[workspace]
+authors = ["Benjamin Tovar <btovar@nd.edu>"]
+channels = ["conda-forge"]
+name = "vine-cms-analysis-stack-tutorials"
+platforms = ["linux-64"]
+version = "0.1.0"
+
+[tasks]
+
+[dependencies]
