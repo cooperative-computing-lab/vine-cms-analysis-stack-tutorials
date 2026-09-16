@@ -1,0 +1,65 @@
+site_name: VineReduce / TaskVine Tutorial
+site_description: 3-hour hands-on tutorial for HEP graduate students on TaskVine, VineReduce, and the vine-cms-analysis-stack
+repo_url: https://github.com/cooperative-computing-lab/vine-cms-analysis-stack-tutorials
+repo_name: vine-cms-analysis-stack-tutorials
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.instant
+    - navigation.footer
+    - content.code.copy
+    - toc.integrate
+
+extra_css:
+  - stylesheets/extra.css
+
+markdown_extensions:
+  - admonition
+  - def_list
+  - tables
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed:
+      alternate_style: true
+
+nav:
+  - Home: index.md
+  - "0. Intro": module-00-intro.md
+  - "1. Setup & verify": module-01-setup.md
+  - "2. Local distributor": module-02-local-distributor.md
+  - "3. Local TaskVine factory": module-03-local-factory.md
+  - "4. Scale out": module-04-scale-out.md
+  - "5. Resources & chunk/reduction size": module-05-resources.md
+  - "6. Checkpoints & restart": module-06-checkpoints-restart.md
+  - "7. result_postprocess": module-07-result-postprocess.md
+  - "8. Multiple processors": module-08-multiple-processors.md
+  - "9. failure_proportion": module-09-failure-proportion.md
+  - "10. Wrap-up": module-10-wrapup.md
+  - Appendix: appendix.md

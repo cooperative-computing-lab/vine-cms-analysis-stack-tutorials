@@ -1,0 +1,191 @@
+/* Carpentries brand palette (source of truth:
+   github.com/carpentries/varnish/blob/main/source/stylesheets/variables.scss),
+   applied on top of the Material theme instead of Material's own indigo. The
+   header uses the "software" lesson-type accent (dark-purple), matching the
+   pedagogy this tutorial borrows. */
+
+:root {
+  --md-primary-fg-color: #201335;         /* carpentries $dark-purple - "software" header stripe */
+  --md-primary-fg-color--light: #491997;  /* carpentries $deep-purple */
+  --md-primary-fg-color--dark: #1f1f1f;   /* carpentries $black */
+  --md-primary-bg-color: #fafafa;         /* carpentries $bright-white - header text/icons */
+  --md-primary-bg-color--light: #fafafa;
+
+  --md-accent-fg-color: #1f62ff;          /* carpentries $blue - the site's own link color */
+  --md-accent-fg-color--transparent: #1f62ff1a;
+  --md-accent-bg-color: #fafafa;
+  --md-accent-bg-color--light: #fafafa;
+
+  /* Prose-safe echoes of the .term/vine_reduce console colors below,
+     for referring to them inline in body text (e.g. "the <clr-yellow>
+     completed</> count") - same color family, but readable on a page
+     background instead of tuned for a black terminal window. Green/blue
+     reuse colors already in use elsewhere on the page for consistency. */
+  --clr-green: #1a7f4e;
+  --clr-red: #c62828;
+  --clr-yellow: #8a6d00;
+  --clr-blue: #1f62ff;  /* same as the link color above */
+  --clr-cyan: #0e7c86;
+  --clr-gray: #586f7c;  /* same as the "note" admonition color below */
+}
+
+.md-typeset a {
+  color: #1f62ff; /* carpentries $blue */
+}
+
+.md-typeset a:hover {
+  color: #491997; /* carpentries $deep-purple */
+}
+
+/* Dark mode (Material's "slate" scheme, toggled by the sun/moon icon in the
+   header - already wired up in mkdocs.yml's palette: block, this just
+   recolors it). Source of truth: carpentries/varnish's dark.scss. */
+[data-md-color-scheme="slate"] {
+  --md-default-bg-color: #1f1f1f;         /* carpentries $black */
+  --md-default-fg-color: #ebeeef;         /* carpentries $off-white */
+  --md-default-fg-color--light: #ebeeefcc;
+  --md-default-fg-color--lighter: #ebeeef80;
+  --md-default-fg-color--lightest: #ebeeef33;
+  --md-typeset-color: #ebeeef;
+
+  --md-primary-fg-color: #491997;         /* carpentries $deep-purple - lighter than the light-mode header for contrast on dark */
+  --md-primary-fg-color--light: #6320ee;
+  --md-primary-fg-color--dark: #1f1f1f;
+
+  --md-accent-fg-color: #7684c6;          /* carpentries $light-blue - the site's own dark-mode link color */
+  --md-accent-fg-color--transparent: #7684c61a;
+
+  --md-code-bg-color: #23282a;            /* carpentries $dark-grey */
+  --md-code-fg-color: #ebeeef;
+
+  /* Prose-safe color echoes (see :root above) - brightened for a dark
+     background; green/blue/gray reuse colors already in use elsewhere on
+     the page in dark mode for consistency. */
+  --clr-green: #34d399;
+  --clr-red: #ff6b6b;
+  --clr-yellow: #e0c341;
+  --clr-blue: #7684c6;  /* same as the dark-mode link color above */
+  --clr-cyan: #4fd1d1;
+  --clr-gray: #9aa5ab;
+}
+
+[data-md-color-scheme="slate"] .md-typeset a {
+  color: #7684c6; /* carpentries $light-blue */
+}
+
+[data-md-color-scheme="slate"] .md-typeset a:hover {
+  color: #d2bcf4; /* carpentries $light-purple */
+}
+
+/* Admonitions remapped to Carpentries' actual callout-box semantics
+   (source: github.com/carpentries/varnish/blob/main/source/stylesheets/callouts.scss)
+   instead of Material's defaults - only the types this tutorial actually
+   uses (see docs/*.md for `!!! note|info|warning|danger|example`). */
+
+/* note -> Carpentries' generic gray Callout box */
+.md-typeset .admonition.note,
+.md-typeset details.note {
+  border-color: #586f7c;
+}
+.md-typeset .note > .admonition-title,
+.md-typeset .note > summary {
+  background-color: #586f7c1a;
+}
+.md-typeset .note > .admonition-title::before,
+.md-typeset .note > summary::before {
+  background-color: #586f7c;
+}
+
+/* info -> Carpentries' Checklist box (bright-blue) */
+.md-typeset .admonition.info,
+.md-typeset details.info {
+  border-color: #0d96f9;
+}
+.md-typeset .info > .admonition-title,
+.md-typeset .info > summary {
+  background-color: #0d96f91a;
+}
+.md-typeset .info > .admonition-title::before,
+.md-typeset .info > summary::before {
+  background-color: #0d96f9;
+}
+
+/* warning -> Carpentries' Prereq box (purple) - used here for prerequisite checks */
+.md-typeset .admonition.warning,
+.md-typeset details.warning {
+  border-color: #6320ee;
+}
+.md-typeset .warning > .admonition-title,
+.md-typeset .warning > summary {
+  background-color: #6320ee1a;
+}
+.md-typeset .warning > .admonition-title::before,
+.md-typeset .warning > summary::before {
+  background-color: #6320ee;
+}
+
+/* danger -> Carpentries' Caution box (red) - used here for open TODOs */
+.md-typeset .admonition.danger,
+.md-typeset details.danger {
+  border-color: #eb4f36;
+}
+.md-typeset .danger > .admonition-title,
+.md-typeset .danger > summary {
+  background-color: #eb4f361a;
+}
+.md-typeset .danger > .admonition-title::before,
+.md-typeset .danger > summary::before {
+  background-color: #eb4f36;
+}
+
+/* example -> Carpentries' Challenge box (yellow) - used here for live demos */
+.md-typeset .admonition.example,
+.md-typeset details.example {
+  border-color: #fce762;
+}
+.md-typeset .example > .admonition-title,
+.md-typeset .example > summary {
+  background-color: #fce7621a;
+}
+.md-typeset .example > .admonition-title::before,
+.md-typeset .example > summary::before {
+  background-color: #fce762;
+}
+
+/* Terminal-output blocks - vine_reduce's own rich console output
+   (progress.py's _STATUS_STYLE/_bar/_counts_colored), reproduced with its
+   real ANSI colors instead of plain text. Always a dark terminal window
+   regardless of site theme - like a real terminal, not toggled by the
+   light/dark switch. Base colors are rich's exact resolved hex for its
+   named styles (green #008000, red #800000, yellow #808000, blue #000080,
+   cyan #008080); red/blue are brightened here (as most real terminal
+   color schemes also do) since the literal maroon/navy are nearly
+   invisible against a dark background. */
+.term {
+  background-color: #1e2224;
+  color: #ebeeef;
+  font-family: var(--md-code-font-family, "Roboto Mono", monospace);
+  font-size: 0.72rem;
+  line-height: 1.6;
+  padding: 0.9em 1.1em;
+  border-radius: 6px;
+  overflow-x: auto;
+  white-space: pre;
+  margin: 1em 0;
+}
+.term .t-green  { color: #00b368; } /* completed / success */
+.term .t-red    { color: #ff5c5c; } /* failed */
+.term .t-yellow { color: #d0bc00; } /* completed count */
+.term .t-blue   { color: #5c8dff; } /* total count */
+.term .t-cyan   { color: #2fd1d1; } /* datasets row total count */
+.term .t-gray   { color: #7c8388; } /* remaining/pending, not yet submitted */
+
+/* Prose references to the .term colors above (e.g. explaining what a
+   count's color means) - use these, not .t-*, outside a .term block; see
+   --clr-* tokens near the top of this file for why. */
+.clr-green  { color: var(--clr-green); font-weight: 600; }
+.clr-red    { color: var(--clr-red); font-weight: 600; }
+.clr-yellow { color: var(--clr-yellow); font-weight: 600; }
+.clr-blue   { color: var(--clr-blue); font-weight: 600; }
+.clr-cyan   { color: var(--clr-cyan); font-weight: 600; }
+.clr-gray   { color: var(--clr-gray); font-weight: 600; }

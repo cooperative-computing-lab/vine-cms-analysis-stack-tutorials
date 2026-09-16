@@ -1,0 +1,14 @@
+{
+  "SingleMu": {
+    "metadata": {
+      "dataset": "SingleMu",
+      "source": "Run2012B_SingleMu, CMS Open Data (IRIS-HEP ADL benchmark input), eospublic.cern.ch"
+    },
+    "files": {
+      "root://eospublic.cern.ch//eos/root-eos/benchmark/Run2012B_SingleMu.root": {
+        "object_path": "Events",
+        "num_entries": 500000
+      }
+    }
+  }
+}
