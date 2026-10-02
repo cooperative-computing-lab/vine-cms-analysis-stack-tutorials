@@ -196,8 +196,8 @@ where `trijet_processor` comes from, were written against. Modules
 
 ### `datasets_real.json` - not used today
 
-!!! danger "TODO"
-    A full-size real dataset, read over xrootd at Notre Dame, for
-    [Module 10](module-10-wrapup.md)'s closing discussion only. Its source
-    (server, path, collection) is still to be decided, so there is nothing
-    to fetch yet.
+The same `Run2012B_SingleMu` open-data file as `datasets_small_real.json`
+above, but split into 205 local files across 5 datasets - built once,
+ahead of time, by `scripts/make_real_scale_data.py`, not fetched or
+generated live today. See [Module 10](module-10-wrapup.md)'s closing
+discussion.

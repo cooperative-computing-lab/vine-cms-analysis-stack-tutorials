@@ -38,11 +38,29 @@ once the analysis is no longer a toy.
 
 ### `datasets_real.json`
 
-!!! danger "TODO"
-    A full-size real dataset, read over xrootd at Notre Dame, to show what
-    scaling today's scripts up looks like. The source (server, path,
-    collection) is still to be decided, so there is nothing to fetch or
-    run yet.
+The same `Run2012B_SingleMu` CMS Open Data file used live today, but no
+longer capped at 500,000 events: the **entire** file (53,446,198 events)
+is split into 205 local ROOT files (10,000-500,000 events each), divided
+at random across 5 datasets of 34-47 files apiece:
+
+| dataset | files | events |
+|---|---|---|
+| `SingleMu_Run2012B_193834-194270` | 42 | 11,072,840 |
+| `SingleMu_Run2012B_194271-194789` | 41 | 11,743,639 |
+| `SingleMu_Run2012B_194790-195398` | 47 | 11,562,084 |
+| `SingleMu_Run2012B_195399-195841` | 41 | 10,101,069 |
+| `SingleMu_Run2012B_195842-196531` | 34 | 8,966,566 |
+
+Built once, ahead of time, by `scripts/make_real_scale_data.py` (seeded,
+so the split is reproducible) - not run live in the room. The dataset
+names are styled after real CMS run-range dataset splits, but are
+illustrative only: files were divided by position in the source file, not
+by each event's actual run number, so a name's range isn't a claim about
+what's really inside that dataset.
+
+This is the shape a production analysis (`ttbarEFT`/`TopEFT`) takes on top
+of the exact same API used all session: many files, several datasets, in
+one `VineReduceCoffea` call.
 
 ## Where to get help
 

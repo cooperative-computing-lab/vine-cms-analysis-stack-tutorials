@@ -9,4 +9,5 @@ version = "0.1.0"
 
 [dependencies]
 python = ">=3.14.7,<3.15"
-zensical = ">=0.0.61,<0.0.62"
+mkdocs = ">=1.6.1,<2"
+mkdocs-material = ">=9.7.7,<10"

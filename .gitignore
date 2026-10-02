@@ -229,3 +229,7 @@ checkpoints/
 results/
 vine-factory-*/
 vine-run-info/
+
+# Generated/downloaded data (regenerated locally, never committed)
+data/synthetic/
+data/real_scale/

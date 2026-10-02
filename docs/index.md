@@ -107,14 +107,19 @@ script loads.
    [8](module-08-multiple-processors.md) use it on the HTCondor pool.
 
 3. **`data/datasets_real.json`**: a larger real dataset for the
-   scale-out/closing discussion only, not run live. Its source is xrootd at
-   Notre Dame, as opposed to CERN's `eospublic`; which collection and
-   files, however, is still **to be determined**.
-
-   !!! danger "TODO"
-       Pick the actual ND xrootd source (server, path, collection) and
-       enumerate its file list/sizes (`xrdfs stat`, or equivalent) before
-       writing this file.
+   scale-out/closing discussion only, not run live. It reuses the exact
+   same open file as `datasets_small_real.json` above, but where that tier
+   reads only its first 500,000 events, this one splits the **entire**
+   file (53,446,198 events) into 205 local ROOT files, each 10,000-500,000
+   events, divided at random across 5 datasets of 34-47 files each. Built
+   once, ahead of time, by `scripts/make_real_scale_data.py` (seeded, so
+   the split is reproducible) - not fetched or generated live today. The
+   five dataset names (`SingleMu_Run2012B_193834-194270`, ...) are styled
+   after real CMS run-range dataset splits, but are illustrative only:
+   each file's events were picked by position in the source file, not by
+   any event's actual run number, so a name's range isn't a claim about
+   what's really inside that dataset. See
+   [Module 10](module-10-wrapup.md).
 
 ## Timing table
 
