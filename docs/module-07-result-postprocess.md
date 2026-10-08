@@ -11,39 +11,80 @@ write them to disk there, is exactly what VineReduce is designed to avoid.
 This module writes the skim straight from the worker to shared storage,
 and sends back to the manager only a small note about where the skim went.
 
-## Get the script
-
-```bash
-curl -sL -o scripts/vr_trijet_skim.py \
-  https://raw.githubusercontent.com/cooperative-computing-lab/vine-cms-analysis-stack-tutorials/main/scripts/vr_trijet_skim.py
-```
-
 It uses the same real data and pool setup as [Module 4](module-04-scale-out.md).
+
+## What changed in the script
+
+This module's script (`scripts/vr_trijet_skim.py`,
+or `scripts/vr_trijet_skim_rdf.py`) is Module 4's
+(`vr_trijet_condor.py`, or `vr_trijet_condor_rdf.py`), with the processor
+swapped for a skimmer, a reducer, and a `result_postprocess` that writes the
+skim out. The sections below walk through each of the three, and then show
+how they plug into the `VineReduce...(...)` call. The data, the manager, the
+packed environment, and `resources_*` are as in Module 4.
 
 ## The skim
 
-The processor makes the same best-trijet choice as before; however, rather
-than filling histograms, it keeps the events whose trijet mass is between
-150 and 195 GeV and returns them:
+=== "coffea"
 
-```python
-def trijet_skimmer(events):
-    ...  # Module 4's best-trijet selection
-    in_window = ak.fill_none((best.p4.mass > MASS_LOW) & (best.p4.mass < MASS_HIGH), False)
+    The processor makes the same best-trijet choice as before; however, rather
+    than filling histograms, it keeps the events whose trijet mass is between
+    150 and 195 GeV and returns them:
 
-    selected = events[in_window]
-    best = ak.drop_none(best[in_window], axis=0)
-    return ak.zip(
-        {
-            "jet_pt": selected.Jet.pt,
+    ```python
+    def trijet_skimmer(events):
+        ...  # Module 4's best-trijet selection
+        in_window = ak.fill_none((best.p4.mass > MASS_LOW) & (best.p4.mass < MASS_HIGH), False)
+
+        selected = events[in_window]
+        best = ak.drop_none(best[in_window], axis=0)
+        return ak.zip(
+            {
+                "jet_pt": selected.Jet.pt,
+                ...
+                "trijet_pt": best.p4.pt,
+                "trijet_mass": best.p4.mass,
+                "dataset": ak.Array([events.metadata["dataset"]] * len(selected)),
+            },
+            depth_limit=1,
+        )
+    ```
+
+=== "RDataFrame"
+
+    The processor makes the same best-trijet choice as before; however, rather
+    than filling histograms, it keeps the events whose trijet mass is between
+    150 and 195 GeV and returns them. Two things are new: `chunk_to_args` also
+    hands over the dataset's name, since `result_postprocess` will only see the
+    skim and not which dataset it came from, and the selected columns leave
+    RDataFrame as an awkward array through `ak.from_rdataframe`, so that the
+    rest of this module is the same for both flavors:
+
+    ```python
+    def chunk_to_args(chunk, dataset_metadata, distributor_metadata=None):
+        ...  # Module 4's RDataFrame over [chunk.start, chunk.stop)
+        return df, dataset_metadata["dataset"]
+
+
+    def trijet_skimmer(args):
+        df, dataset_name = args
+        ...  # Module 4's BestTrijet, compiled as before
+        selected = (
+            df.Filter("nJet >= 3")
+            .Define("best", "BestTrijet(Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_btag)")
+            .Filter(f"best[2] > {MASS_LOW} && best[2] < {MASS_HIGH}")
+            .Define("jet_pt", "Jet_pt")
             ...
-            "trijet_pt": best.p4.pt,
-            "trijet_mass": best.p4.mass,
-            "dataset": ak.Array([events.metadata["dataset"]] * len(selected)),
-        },
-        depth_limit=1,
-    )
-```
+            .Define("trijet_pt", "best[0]")
+            .Define("trijet_mass", "best[2]")
+        )
+        skim = ak.from_rdataframe(selected, columns=("jet_pt", ..., "trijet_mass"))
+        skim["dataset"] = ak.Array([dataset_name] * len(skim))
+        return skim
+    ```
+
+    `best[2]` is the third value that `BestTrijet` returns, the trijet's mass,
+    next to its pT and its highest b-tag score from Module 4.
 
 The default reducer knows how to add histograms, but not how to merge event
 arrays, so the skim brings its own:
@@ -77,32 +118,66 @@ It writes the events to parquet under `/project01`, which is shared by the
 pool's worker nodes and the login node. What it returns is only a
 **locator**, that is, the file's path and how many events it holds.
 
-Three settings in `VineReduceCoffea(...)` tie this together:
+=== "coffea"
 
-```python
-vr = VineReduceCoffea(
-    processors={"skim": trijet_skimmer},
-    ...
-    chunksize=10_000,
-    reducer=accumulate_skims,
-    is_result=lambda n, t, m: n >= 10_000,
-    result_postprocess=make_result_postprocess(SKIM_DIR),
-    result_postprocess_offload=True,
-)
-```
+    Three settings in `VineReduceCoffea(...)` tie this together (diffed
+    against Module 4's call):
+
+    ```diff
+     vr = VineReduceCoffea(
+    -    processors={"trijet": trijet_processor},
+    +    processors={"skim": trijet_skimmer},
+         input=datasets_path,
+         distributor=distributor,
+         results_dir=results_dir,
+         checkpoint_dir=checkpoint_dir,
+    -    chunksize=100_000,
+    +    chunksize=50_000,
+    +    reducer=accumulate_skims,
+    +    is_result=lambda n, t, m: n >= 50_000,
+    +    result_postprocess=make_result_postprocess(SKIM_DIR),
+    +    result_postprocess_offload=True,
+     )
+    ```
+
+=== "RDataFrame"
+
+    Three settings in `VineReduce(...)` tie this together (diffed against
+    Module 4's call; `input_to_datasets` and `chunk_to_args` are as in
+    Module 4, and `reducer=coffea_reducer` is replaced by the skim's own):
+
+    ```diff
+     vr = VineReduce(
+    -    processors={"trijet": trijet_processor},
+    +    processors={"skim": trijet_skimmer},
+         input=datasets_path,
+         input_to_datasets=coffea_input_to_datasets,
+         chunk_to_args=chunk_to_args,
+    -    reducer=coffea_reducer,
+         distributor=distributor,
+         results_dir=results_dir,
+         checkpoint_dir=checkpoint_dir,
+    -    chunksize=100_000,
+    +    chunksize=50_000,
+    +    reducer=accumulate_skims,
+    +    is_result=lambda n, t, m: n >= 50_000,
+    +    result_postprocess=make_result_postprocess(SKIM_DIR),
+    +    result_postprocess_offload=True,
+     )
+    ```
 
 With **`result_postprocess_offload=True`**, the locator is the only thing
 that comes back. Rather than pickling a result into `*.pkl.zst`, VineReduce
 writes a small `*.pointer.json` into `results/`, and thus the manager never
 sees the events.
 
-**`is_result=lambda n, t, m: n >= 10_000`** changes how many final results
+**`is_result=lambda n, t, m: n >= 50_000`** changes how many final results
 there are. Normally there is one final result per dataset, covering every
 event. However, `is_result` gets a group's number of events (`n`), total
 wall time (`t`), and total memory (`m`), and decides whether that group is
-already a final result. Here any group covering 10,000 events or more is
-final, so one run writes **several** parquet files, each a piece of the
-skim. This is how you keep single skim files from growing without bound.
+already a final result. Here any group covering 50,000 events or more is
+final, so one run writes **several** parquet files per dataset, each a piece
+of the skim. This is how you keep single skim files from growing without bound.
 
 The **uuid** in each file name matters for the same reason. Several final
 results can be written at the same moment, and each of them needs its own
@@ -138,18 +213,35 @@ EOF
 
 **Terminal 1:**
 
-=== "Option A: conda"
+=== "coffea"
 
-    ```bash
-    conda activate vine-cms-analysis-stack
-    python scripts/vr_trijet_skim.py
-    ```
+    === "Option A: conda"
 
-=== "Option B: pixi"
+        ```bash
+        conda activate vine-cms-analysis-stack
+        python scripts/vr_trijet_skim.py
+        ```
 
-    ```bash
-    pixi run python scripts/vr_trijet_skim.py
-    ```
+    === "Option B: pixi"
+
+        ```bash
+        pixi run python scripts/vr_trijet_skim.py
+        ```
+
+=== "RDataFrame"
+
+    === "Option A: conda"
+
+        ```bash
+        conda activate vine-cms-analysis-stack
+        python scripts/vr_trijet_skim_rdf.py
+        ```
+
+    === "Option B: pixi"
+
+        ```bash
+        pixi run python scripts/vr_trijet_skim_rdf.py
+        ```
 
 **Terminal 2**, the factory with the new `factory.json`:
 
@@ -168,95 +260,229 @@ EOF
       --wrapper ./with_oasis_certs --wrapper-input with_oasis_certs
     ```
 
-This time there are 50 chunks of 10,000 events. In the run below, the workers
-took about two and a half minutes to start, and the whole run about six:
+This time there are 83 chunks of up to 50,000 events, five datasets in all.
 
-<div class="term">
-TaskVine manager 'btovar-trijet-tutorial' listening on port 43775
-skims will be written under /project01/ndcms/users/btovar/trijet-skims
-waiting for workers from your vine_factory...
-...
-<span class="t-green">success             </span> processor skim/SingleMu ...n2012B_SingleMu.root[490000:500000] (id=f94fb8b3) cores=1(1) memory_mb=214(2016) wall_time_s=4(0)
-<span class="t-green">success             </span> result    skim/SingleMu reduction of 10 partials (final) (id=614f2c8c) cores=1(1) memory_mb=222(2016) wall_time_s=1(0)
-<span class="t-green">success             </span> result    skim/SingleMu reduction of 10 partials (final) (id=a000f590) cores=1(1) memory_mb=211(2016) wall_time_s=1(0)
-<span class="t-green">success             </span> result    skim/SingleMu reduction of 10 partials (final) (id=4e6be0be) cores=1(1) memory_mb=220(2016) wall_time_s=1(0)
-<span class="t-green">success             </span> result    skim/SingleMu reduction of 10 partials (final) (id=401c7050) cores=1(1) memory_mb=219(2016) wall_time_s=1(0)
-<span class="t-green">success             </span> result    skim/SingleMu reduction of 10 partials (final) (id=bd866061) cores=1(1) memory_mb=218(2016) wall_time_s=1(0)
-skim       [ <span class="t-green">██████████████████████████████</span> ]                 <span class="t-yellow">50</span>/<span class="t-red">0</span>/<span class="t-blue">50</span>
-reductions [ <span class="t-green">██████████████████████████████</span> ]                   <span class="t-yellow">5</span>/<span class="t-red">0</span>/<span class="t-blue">5</span>
-events     [ <span class="t-green">██████████████████████████████</span> ] <span class="t-yellow">500000</span>(<span class="t-green">500000</span>)/<span class="t-red">0</span>/<span class="t-blue">500000</span>
-datasets   [ <span class="t-green">██████████████████████████████</span> ]                     <span class="t-green">1</span>/<span class="t-cyan">1</span>
- 22111 events -> /project01/ndcms/users/btovar/trijet-skims/SingleMu.99c11030654a4ddb9016ba56e306a4d4.parquet
- 17109 events -> /project01/ndcms/users/btovar/trijet-skims/SingleMu.3fc05863b6e24e3c80dd809751fe584b.parquet
- 14624 events -> /project01/ndcms/users/btovar/trijet-skims/SingleMu.fe18e8c785634bd4a2abfadc5e82f768.parquet
- 25364 events -> /project01/ndcms/users/btovar/trijet-skims/SingleMu.dc3f684afde045e0b45aa072777a2f23.parquet
- 20343 events -> /project01/ndcms/users/btovar/trijet-skims/SingleMu.0bcd9c4b5efa46af9e8cd361ed858ba2.parquet
-5 final results, 99551 events in the skim
-</div>
+=== "coffea"
 
-Every group of 10 partial results already covered 100,000 events, well
-over `is_result`'s 10,000, so each of them became a final result on the
-spot (`result ... (final)`). Thus the run produces **5 final results** rather than
-one, and 5 parquet files. Of the 500,000 events, **99,551** have a best
-trijet between 150 and 195 GeV. The file sizes differ because each
-file is a different slice of the data. Further, all 5 final
-reductions wrote their files on the workers, and none of the events came
-back through this terminal.
+    The run below took under a minute once the workers were up:
+
+    <div class="term">
+    TaskVine manager 'btovar-trijet-tutorial' listening on port 43775
+    skims will be written under /project01/ndcms/users/btovar/trijet-skims
+    waiting for workers from your vine_factory...
+    ...
+    <span class="t-green">success             </span> processor skim/SingleMu_Run2012B_195842-196531 ...2-196531/file_2.root[50000:99449] (id=c37dc2d6) cores=1(1) memory_mb=315(2016) wall_time_s=1(0)
+    <span class="t-green">success             </span> final     skim/SingleMu_Run2012B_195399-195841 reduction of 3 partials (final) (id=fafb5f28) cores=1(1) memory_mb=249(2016) wall_time_s=1(0)
+    <span class="t-green">success             </span> result    skim/SingleMu_Run2012B_195842-196531 reduction of 10 partials (final) (id=0acae435) cores=1(1) memory_mb=295(2016) wall_time_s=1(0)
+    <span class="t-green">success             </span> final     skim/SingleMu_Run2012B_195842-196531 reduction of 8 partials (final) (id=86e0ead4) cores=1(1) memory_mb=268(2016) wall_time_s=1(0)
+    skim       [ <span class="t-green">██████████████████████████████</span> ]                    <span class="t-yellow">83</span>/<span class="t-red">0</span>/<span class="t-blue">83</span>
+    reductions [ <span class="t-green">██████████████████████████████</span> ]                    <span class="t-yellow">11</span>/<span class="t-red">0</span>/<span class="t-blue">11</span>
+    events     [ <span class="t-green">██████████████████████████████</span> ] <span class="t-yellow">3736416</span>(<span class="t-green">3736416</span>)/<span class="t-red">0</span>/<span class="t-blue">3736416</span>
+    datasets   [ <span class="t-green">██████████████████████████████</span> ]                        <span class="t-green">5</span>/<span class="t-cyan">5</span>
+     51491 events -> /project01/ndcms/users/btovar/trijet-skims/SingleMu_Run2012B_193834-194270.d293f06c26b34a6881ef56cacb6479f4.parquet
+     78200 events -> /project01/ndcms/users/btovar/trijet-skims/SingleMu_Run2012B_193834-194270.628e1ba07e4444edb3c4d91f3e73b974.parquet
+    104495 events -> /project01/ndcms/users/btovar/trijet-skims/SingleMu_Run2012B_194271-194789.22bad5ac4d604a428acfe8cecb3fadca.parquet
+    101615 events -> /project01/ndcms/users/btovar/trijet-skims/SingleMu_Run2012B_194271-194789.f29ed1a0abe944db967f5aaa56039250.parquet
+     20949 events -> /project01/ndcms/users/btovar/trijet-skims/SingleMu_Run2012B_194271-194789.3baf79829f824684a95aed90c7f4bfff.parquet
+     21085 events -> /project01/ndcms/users/btovar/trijet-skims/SingleMu_Run2012B_194790-195398.3f7e0817258a44b49ca1384db2c09200.parquet
+    105864 events -> /project01/ndcms/users/btovar/trijet-skims/SingleMu_Run2012B_194790-195398.1a9f144626af4f4eb419cc4e42e77ad1.parquet
+     85146 events -> /project01/ndcms/users/btovar/trijet-skims/SingleMu_Run2012B_195399-195841.bcf1498ba042400da20e05c8bcf0ef3e.parquet
+     29110 events -> /project01/ndcms/users/btovar/trijet-skims/SingleMu_Run2012B_195399-195841.3dbcdfeebd3242a2b45106904efff75f.parquet
+     71729 events -> /project01/ndcms/users/btovar/trijet-skims/SingleMu_Run2012B_195842-196531.e1e6b2219d0d4b3cba1fc6847e1a513d.parquet
+    106502 events -> /project01/ndcms/users/btovar/trijet-skims/SingleMu_Run2012B_195842-196531.885b37f41b764cbbb7a3af8bf3e3821d.parquet
+    11 final results, 776186 events in the skim
+    </div>
+
+    Every group of 10 partial results covered up to 500,000 events, well over
+    `is_result`'s 50,000, so each of them became a final result on the spot
+    (`result ... (final)`), and what was left of each dataset was folded by one
+    more, forced `final` reduction. Thus the run produces **11 final
+    results** rather than one per dataset, and 11 parquet files: two or three for each dataset. Of
+    the 3,736,416 events, **776,186** have a best trijet between 150
+    and 195 GeV. The file sizes differ because each file is a different slice of
+    the data. Further, all 11 final reductions wrote their files on the workers, and
+    none of the events came back through this terminal.
+
+=== "RDataFrame"
+
+    The run below took about two and a half minutes once the workers were up:
+
+    <div class="term">
+    TaskVine manager 'btovar-trijet-tutorial' listening on port 43775
+    skims will be written under /project01/ndcms/users/btovar/trijet-skims
+    waiting for workers from your vine_factory...
+    ...
+    <span class="t-green">success             </span> processor skim/SingleMu_Run2012B_195842-196531 ...2-196531/file_2.root[50000:99449] (id=e90bb2a9) cores=1(1) memory_mb=881(2016) wall_time_s=7(0)
+    <span class="t-green">success             </span> final     skim/SingleMu_Run2012B_195399-195841 reduction of 3 partials (final) (id=1f289b39) cores=1(1) memory_mb=143(2016) wall_time_s=1(0)
+    <span class="t-green">success             </span> result    skim/SingleMu_Run2012B_195842-196531 reduction of 10 partials (final) (id=e3afaddd) cores=1(1) memory_mb=187(2016) wall_time_s=1(0)
+    <span class="t-green">success             </span> final     skim/SingleMu_Run2012B_195842-196531 reduction of 8 partials (final) (id=4667c3e4) cores=1(1) memory_mb=169(2016) wall_time_s=1(0)
+    skim       [ <span class="t-green">██████████████████████████████</span> ]                    <span class="t-yellow">83</span>/<span class="t-red">0</span>/<span class="t-blue">83</span>
+    reductions [ <span class="t-green">██████████████████████████████</span> ]                    <span class="t-yellow">11</span>/<span class="t-red">0</span>/<span class="t-blue">11</span>
+    events     [ <span class="t-green">██████████████████████████████</span> ] <span class="t-yellow">3736416</span>(<span class="t-green">3736416</span>)/<span class="t-red">0</span>/<span class="t-blue">3736416</span>
+    datasets   [ <span class="t-green">██████████████████████████████</span> ]                        <span class="t-green">5</span>/<span class="t-cyan">5</span>
+     51491 events -> /project01/ndcms/users/btovar/trijet-skims/SingleMu_Run2012B_193834-194270.87dd1353bb14470684ccf368d04a7db0.parquet
+     78200 events -> /project01/ndcms/users/btovar/trijet-skims/SingleMu_Run2012B_193834-194270.d9e238285510447e9bc0658a7508ba5a.parquet
+     98205 events -> /project01/ndcms/users/btovar/trijet-skims/SingleMu_Run2012B_194271-194789.253b21ea0c024132994b9070c7be72b5.parquet
+     27239 events -> /project01/ndcms/users/btovar/trijet-skims/SingleMu_Run2012B_194271-194789.84e438e287ae4dc58c90a247733bc507.parquet
+    101616 events -> /project01/ndcms/users/btovar/trijet-skims/SingleMu_Run2012B_194271-194789.4b1ce447a3cb482e9ecac5ae4c2a1518.parquet
+    105864 events -> /project01/ndcms/users/btovar/trijet-skims/SingleMu_Run2012B_194790-195398.a91bf258aa7b4c3fb7f81cad86594243.parquet
+     21086 events -> /project01/ndcms/users/btovar/trijet-skims/SingleMu_Run2012B_194790-195398.49c3ed3774804c8ba892b840b8e4804f.parquet
+     85146 events -> /project01/ndcms/users/btovar/trijet-skims/SingleMu_Run2012B_195399-195841.d75589d1d3e24242be17082a013c47a2.parquet
+     29111 events -> /project01/ndcms/users/btovar/trijet-skims/SingleMu_Run2012B_195399-195841.a2906dbe00cd4ac88425c4735b3f43f7.parquet
+     74400 events -> /project01/ndcms/users/btovar/trijet-skims/SingleMu_Run2012B_195842-196531.5e8f8fa5d9314a31af54c22c20453151.parquet
+    103831 events -> /project01/ndcms/users/btovar/trijet-skims/SingleMu_Run2012B_195842-196531.06d2ffcf22594d159918439b879fc1ba.parquet
+    11 final results, 776189 events in the skim
+    </div>
+
+    Every group of 10 partial results covered up to 500,000 events, well over
+    `is_result`'s 50,000, so each of them became a final result on the spot
+    (`result ... (final)`), and what was left of each dataset was folded by one
+    more, forced `final` reduction. Thus the run produces **11 final
+    results** rather than one per dataset, and 11 parquet files: two or three for each dataset. Of
+    the 3,736,416 events, **776,189** have a best trijet between 150
+    and 195 GeV. (The coffea flavor finds 776,186: a few events lie very close to the
+    edges of the window, where the two flavors' floating-point rounding can
+    disagree.) The file sizes differ because each file is a different slice of
+    the data. Further, all 11 final reductions wrote their files on the workers, and
+    none of the events came back through this terminal. Note that a reducer's `memory_mb` is far below
+    a processor's, since it never loads ROOT.
+
+    *The RDataFrame output on this page was captured with a local worker of the same size as the pool's (4 cores, 8064 MB), rather than on the pool itself, so your hosts and timings will differ.*
 
 ## What's on the manager's side
 
-```bash
-ls results/SingleMu/skim/
-```
+=== "coffea"
 
-```
-skim__38ccab6c2c0647cdb8c8759df329121c.pointer.json
-skim__9e3cbdd17e1d4e1995749d6f039313d7.pointer.json
-skim__b3d216d9782a4c7eaf3baeb0f876c587.pointer.json
-skim__df7b1f74eedc4e3bb5d89173e520d270.pointer.json
-skim__f3afafd779f04878add3c48913d36761.pointer.json
-```
+    ```bash
+    ls results/SingleMu_Run2012B_194271-194789/skim/
+    ```
 
-There is no `*.pkl.zst` this time, only one small pointer file per final
-result.
+    ```
+    skim__1fa576b5b5924f43ac49e06908cc7864.pointer.json
+    skim__3930d8fff44d426188f43cfb0331c447.pointer.json
+    skim__831fe1d4e3ce460897672e6489a347cd.pointer.json
+    ```
 
-```bash
-cat results/SingleMu/skim/skim__38ccab6c2c0647cdb8c8759df329121c.pointer.json
-```
+    There is no `*.pkl.zst` this time, only one small pointer file per final
+    result, in each dataset's own directory (this dataset has 3).
 
-```json
-{"offloaded": true, "processor_name": "skim", "dataset_name": "SingleMu", "locator": {"path": "/project01/ndcms/users/btovar/trijet-skims/SingleMu.99c11030654a4ddb9016ba56e306a4d4.parquet", "events": 22111}}
-```
+    ```bash
+    cat results/SingleMu_Run2012B_194271-194789/skim/skim__1fa576b5b5924f43ac49e06908cc7864.pointer.json
+    ```
 
-VineReduce wraps whatever `result_postprocess` returned (`locator`) with
-the pipeline it came from. This is everything the manager ever held for
-this skim, and also everything a later step needs to find and read the
-data.
+    ```json
+    {
+      "offloaded": true,
+      "processor_name": "skim",
+      "dataset_name": "SingleMu_Run2012B_194271-194789",
+      "locator": {
+        "path": "/project01/ndcms/users/btovar/trijet-skims/SingleMu_Run2012B_194271-194789.22bad5ac4d604a428acfe8cecb3fadca.parquet",
+        "events": 104495
+      }
+    }
+    ```
+
+    VineReduce wraps whatever `result_postprocess` returned (`locator`) with
+    the pipeline it came from. This is everything the manager ever held for
+    this skim, and also everything a later step needs to find and read the
+    data.
+
+=== "RDataFrame"
+
+    ```bash
+    ls results/SingleMu_Run2012B_194271-194789/skim/
+    ```
+
+    ```
+    skim__60938e7a51974c19a5b424b33327f91b.pointer.json
+    skim__b233318ea4994b38802196514853db74.pointer.json
+    skim__b2d49b42c44c44a687fae5a827fbff5d.pointer.json
+    ```
+
+    There is no `*.pkl.zst` this time, only one small pointer file per final
+    result, in each dataset's own directory (this dataset has 3).
+
+    ```bash
+    cat results/SingleMu_Run2012B_194271-194789/skim/skim__60938e7a51974c19a5b424b33327f91b.pointer.json
+    ```
+
+    ```json
+    {
+      "offloaded": true,
+      "processor_name": "skim",
+      "dataset_name": "SingleMu_Run2012B_194271-194789",
+      "locator": {
+        "path": "/project01/ndcms/users/btovar/trijet-skims/SingleMu_Run2012B_194271-194789.253b21ea0c024132994b9070c7be72b5.parquet",
+        "events": 98205
+      }
+    }
+    ```
+
+    VineReduce wraps whatever `result_postprocess` returned (`locator`) with
+    the pipeline it came from. This is everything the manager ever held for
+    this skim, and also everything a later step needs to find and read the
+    data.
 
 ## What's on `/project01`
 
-The skim itself is on shared storage. From the login node:
+=== "coffea"
 
-```bash
-ls -l /project01/ndcms/users/$USER/trijet-skims/
-```
+    The skim itself is on shared storage. From the login node:
 
-```
-total 14208
--rw-r--r-- 1 btovar osguser 2967719 Sep 14 11:57 SingleMu.0bcd9c4b5efa46af9e8cd361ed858ba2.parquet
--rw-r--r-- 1 btovar osguser 2499395 Sep 14 11:57 SingleMu.3fc05863b6e24e3c80dd809751fe584b.parquet
--rw-r--r-- 1 btovar osguser 3270735 Sep 14 11:57 SingleMu.99c11030654a4ddb9016ba56e306a4d4.parquet
--rw-r--r-- 1 btovar osguser 3950022 Sep 14 11:57 SingleMu.dc3f684afde045e0b45aa072777a2f23.parquet
--rw-r--r-- 1 btovar osguser 1859295 Sep 14 11:57 SingleMu.fe18e8c785634bd4a2abfadc5e82f768.parquet
-```
+    ```bash
+    ls -lgo /project01/ndcms/users/$USER/trijet-skims/
+    ```
 
-That is five files, about 14 MB in total. At this size it perhaps wouldn't
-have mattered much where they were written; however, the pattern is the
-same when the skim is hundreds of gigabytes, as the manager only ever
-handles the five one-line pointers.
+    ```
+    total 108940
+    -rw-r--r-- 1 10897674 Oct 02 17:15 SingleMu_Run2012B_193834-194270.628e1ba07e4444edb3c4d91f3e73b974.parquet
+    -rw-r--r-- 1  7176090 Oct 02 17:15 SingleMu_Run2012B_193834-194270.d293f06c26b34a6881ef56cacb6479f4.parquet
+    -rw-r--r-- 1 15259609 Oct 02 17:15 SingleMu_Run2012B_194271-194789.22bad5ac4d604a428acfe8cecb3fadca.parquet
+    -rw-r--r-- 1  2610537 Oct 02 17:15 SingleMu_Run2012B_194271-194789.3baf79829f824684a95aed90c7f4bfff.parquet
+    -rw-r--r-- 1 14898298 Oct 02 17:15 SingleMu_Run2012B_194271-194789.f29ed1a0abe944db967f5aaa56039250.parquet
+    -rw-r--r-- 1 15550490 Oct 02 17:15 SingleMu_Run2012B_194790-195398.1a9f144626af4f4eb419cc4e42e77ad1.parquet
+    -rw-r--r-- 1  2716659 Oct 02 17:15 SingleMu_Run2012B_194790-195398.3f7e0817258a44b49ca1384db2c09200.parquet
+    -rw-r--r-- 1  4355176 Oct 02 17:15 SingleMu_Run2012B_195399-195841.3dbcdfeebd3242a2b45106904efff75f.parquet
+    -rw-r--r-- 1 12376975 Oct 02 17:15 SingleMu_Run2012B_195399-195841.bcf1498ba042400da20e05c8bcf0ef3e.parquet
+    -rw-r--r-- 1 15726664 Oct 02 17:15 SingleMu_Run2012B_195842-196531.885b37f41b764cbbb7a3af8bf3e3821d.parquet
+    -rw-r--r-- 1  9965454 Oct 02 17:15 SingleMu_Run2012B_195842-196531.e1e6b2219d0d4b3cba1fc6847e1a513d.parquet
+    ```
+
+    That is 11 files, about 112 MB in total. At this size it perhaps wouldn't
+    have mattered much where they were written; however, the pattern is the
+    same when the skim is hundreds of gigabytes, as the manager only ever
+    handles the 11 one-line pointers.
+
+=== "RDataFrame"
+
+    The skim itself is on shared storage. From the login node:
+
+    ```bash
+    ls -lgo /project01/ndcms/users/$USER/trijet-skims/
+    ```
+
+    ```
+    total 114988
+    -rw-r--r-- 1  7581561 Oct 02 17:16 SingleMu_Run2012B_193834-194270.87dd1353bb14470684ccf368d04a7db0.parquet
+    -rw-r--r-- 1 11520287 Oct 02 17:16 SingleMu_Run2012B_193834-194270.d9e238285510447e9bc0658a7508ba5a.parquet
+    -rw-r--r-- 1 14752072 Oct 02 17:17 SingleMu_Run2012B_194271-194789.253b21ea0c024132994b9070c7be72b5.parquet
+    -rw-r--r-- 1 15709460 Oct 02 17:16 SingleMu_Run2012B_194271-194789.4b1ce447a3cb482e9ecac5ae4c2a1518.parquet
+    -rw-r--r-- 1  4120557 Oct 02 17:17 SingleMu_Run2012B_194271-194789.84e438e287ae4dc58c90a247733bc507.parquet
+    -rw-r--r-- 1  2884450 Oct 02 17:17 SingleMu_Run2012B_194790-195398.49c3ed3774804c8ba892b840b8e4804f.parquet
+    -rw-r--r-- 1 16396351 Oct 02 17:17 SingleMu_Run2012B_194790-195398.a91bf258aa7b4c3fb7f81cad86594243.parquet
+    -rw-r--r-- 1  4581872 Oct 02 17:17 SingleMu_Run2012B_195399-195841.a2906dbe00cd4ac88425c4735b3f43f7.parquet
+    -rw-r--r-- 1 13054138 Oct 02 17:17 SingleMu_Run2012B_195399-195841.d75589d1d3e24242be17082a013c47a2.parquet
+    -rw-r--r-- 1 15929778 Oct 02 17:18 SingleMu_Run2012B_195842-196531.06d2ffcf22594d159918439b879fc1ba.parquet
+    -rw-r--r-- 1 11193755 Oct 02 17:18 SingleMu_Run2012B_195842-196531.5e8f8fa5d9314a31af54c22c20453151.parquet
+    ```
+
+    That is 11 files, about 118 MB in total. At this size it perhaps wouldn't
+    have mattered much where they were written; however, the pattern is the
+    same when the skim is hundreds of gigabytes, as the manager only ever
+    handles the 11 one-line pointers.
 
 !!! note "The skim directory keeps growing"
-    Every run adds five new files (new uuids) next to the old ones.
+    Every run adds new files (new uuids) next to the old ones.
     `results/` is wiped at the start of each run, but
     `/project01/.../trijet-skims/` is not. Clean it up yourself between
     attempts: `rm /project01/ndcms/users/$USER/trijet-skims/*.parquet`.

@@ -1,10 +1,12 @@
 # Module 4 - Scale out
 
+TODO: CURL with_oasis_certs FROM SOMEWHERE
+
 **30 min**
 
 This module runs the same trijet analysis as before, however with three
-important differences. The data is now **real CMS Open Data**, read over
-xrootd from CERN; the workers are **HTCondor jobs** on the pool, rather
+important differences. The data is now **CMS Open Data** read over
+xrootd; the workers are **HTCondor jobs** on the pool, rather
 than processes on the login node; and they find your manager **by name**,
 through a catalog server, as opposed to by host and port.
 
@@ -13,17 +15,14 @@ name, a `vine_factory` in a second terminal, and a certificate wrapper.
 None of them touches the analysis itself, which is perhaps the main point
 of this module.
 
-## Get the files
+## The files
 
-From `~/vine-cms-analysis-stack`:
-
-```bash
-curl -sL -o scripts/vr_trijet_condor.py \
-  https://raw.githubusercontent.com/cooperative-computing-lab/vine-cms-analysis-stack-tutorials/main/scripts/vr_trijet_condor.py
-```
+From `~/vine-cms-analysis-stack/examples/tutorial_nd`, this module's script is
+`scripts/vr_trijet_condor.py` (`scripts/vr_trijet_condor_rdf.py` for
+RDataFrame); there is nothing to download.
 
 You also need the certificate wrapper, `with_oasis_certs`, in
-`~/vine-cms-analysis-stack/` (see [Certificates](#certificates)):
+`~/vine-cms-analysis-stack/examples/tutorial_nd/` (see [Certificates](#certificates)):
 
 !!! danger "TODO"
     How students get `with_oasis_certs` is still to be decided. It isn't
@@ -35,57 +34,84 @@ You also need the certificate wrapper, `with_oasis_certs`, in
 
 ## What changed in the script
 
-Open `scripts/vr_trijet_condor.py`. The functions `trijet_processor` and
-`load_result` are the same as in Module 3; thus, only four things differ:
+**1. The data.** The script reads `data/datasets_xrootd.json` from
+Module 1, the same 15 files and 5 datasets as before, but now by their
+`root://cmsxrootd.crc.nd.edu/...` URLs: pool nodes read them over xrootd,
+whereas `/project01` is only mounted on some of them. The chunks are also
+larger (`chunksize=100_000`), so that there are fewer, longer tasks:
 
-**1. The data.** The script reads `data/datasets_small_real.json` from
-Module 1, which points to one NanoAOD file on `eospublic.cern.ch`, capped
-at 500,000 events.
-
-**2. The manager has a name**, and advertises it to the catalog server
-(`catalog.cse.nd.edu`):
-
-```python
-MANAGER_NAME = f"{getpass.getuser()}-trijet-tutorial"
+```diff
+-    datasets_path = os.path.join(REPO_ROOT, "data", "datasets_vast.json")
++    datasets_path = os.path.join(REPO_ROOT, "data", "datasets_xrootd.json")
+ ...
+-        chunksize=50_000,
++        chunksize=100_000,
 ```
 
-Workers on pool nodes have no idea which machine or port your script is
-on. Rather, they ask the catalog for a manager called
-`<your netid>-trijet-tutorial` and connect to whatever it answers. Having
-your netid in the name keeps your workers from joining a classmate's run.
+**2. Every task ships your environment.** Pool nodes may not have coffea,
+ROOT, vine_reduce, or even this Python installed, therefore the environment
+has to travel with the tasks:
 
-**3. Every task ships your environment.** Pool nodes don't have coffea,
-vine_reduce, or even this Python installed, therefore the environment has
-to travel with the tasks:
-
-```python
-environment = get_environment()
-
-distributor = TaskVineDistributor(
-    name=MANAGER_NAME,
-    port=0,
-    environment=environment,
-    resources_processor={"cores": 1, "memory_mb": 2000},
-    resources_reducer={"cores": 1, "memory_mb": 2000},
-)
+```diff
+-from vine_reduce import serialization
++from vine_reduce import get_environment, serialization
+ ...
++    environment = get_environment()
++
+     distributor = TaskVineDistributor(
+         name=MANAGER_NAME,
+         port=0,
+-        resources_processor={"cores": 1},
+-        resources_reducer={"cores": 1},
++        environment=environment,
++        resources_processor={"cores": 1, "memory_mb": 2000},
++        resources_reducer={"cores": 1, "memory_mb": 2000},
+     )
+     print(f"TaskVine manager {MANAGER_NAME!r} listening on port {distributor.port}")
++    print("waiting for workers from your vine_factory...")
 ```
 
 `get_environment()` returns the tarball you built in Module 1, and given
 that it is a cache hit, the call is instant. TaskVine sends the tarball to
 each worker once, unpacks it there, and runs every task inside it.
 
-The `resources_*` dicts are new too, and with them each call is now
+The `resources_*` dicts have a new `memory_mb`, and with it each call is now
 allowed 1 core and 2000 MB. On a shared pool, you declare what a task
 needs rather than letting it take a share of the whole worker. Choosing
 those numbers well is a bit of an art, and it is the subject of
 [Module 5](module-05-resources.md).
 
-**4. No `vine.Factory`.** Workers now come from a separate `vine_factory`
-process that you run yourself, in a second terminal.
+**3. No `vine.Factory`.** Workers now come from a separate `vine_factory`
+process that you run yourself, in a second terminal, so the worker you
+started inside the script in Module 3 goes away (and with it the
+`import ndcctools.taskvine as vine`):
+
+```diff
+-import ndcctools.taskvine as vine
+ ...
+-    workers = vine.Factory(manager_host_port=f"localhost:{distributor.port}")
+-    workers.ssl = True
+-    workers.cores = 2
+-    workers.min_workers = 1
+-    workers.max_workers = 1
+-    workers.extra_options = "--single-shot"
+-
+-    with distributor, workers:
++    with distributor:
+         vr.compute()
+```
+
+**The manager's name** is not new (it came in with Module 3), but this is
+where it starts to matter. The manager advertises its name to the catalog
+server (`catalog.cse.nd.edu`). Workers on pool nodes have no idea which
+machine or port your script is on. Rather, they ask the catalog for a
+manager called `<your netid>-trijet-tutorial` and connect to whatever it
+answers. Having your netid in the name keeps your workers from joining a
+classmate's run.
 
 ## The factory configuration
 
-Still in `~/vine-cms-analysis-stack`, write `factory.json`:
+Still in `~/vine-cms-analysis-stack/examples/tutorial_nd`, write `factory.json`:
 
 ```bash
 cat > factory.json <<EOF
@@ -130,18 +156,35 @@ cat factory.json
 
 **Terminal 1**, start the analysis:
 
-=== "Option A: conda"
+=== "coffea"
 
-    ```bash
-    conda activate vine-cms-analysis-stack
-    python scripts/vr_trijet_condor.py
-    ```
+    === "Option A: conda"
 
-=== "Option B: pixi"
+        ```bash
+        conda activate vine-cms-analysis-stack
+        python scripts/vr_trijet_condor.py
+        ```
 
-    ```bash
-    pixi run python scripts/vr_trijet_condor.py
-    ```
+    === "Option B: pixi"
+
+        ```bash
+        pixi run python scripts/vr_trijet_condor.py
+        ```
+
+=== "RDataFrame"
+
+    === "Option A: conda"
+
+        ```bash
+        conda activate vine-cms-analysis-stack
+        python scripts/vr_trijet_condor_rdf.py
+        ```
+
+    === "Option B: pixi"
+
+        ```bash
+        pixi run python scripts/vr_trijet_condor_rdf.py
+        ```
 
 ```
 TaskVine manager '<netid>-trijet-tutorial' listening on port 45697
@@ -151,7 +194,7 @@ waiting for workers from your vine_factory...
 Nothing happens yet, since the manager has tasks but no workers to run
 them.
 
-**Terminal 2**, `cd ~/vine-cms-analysis-stack` and start the factory:
+**Terminal 2**, `cd ~/vine-cms-analysis-stack/examples/tutorial_nd` and start the factory:
 
 === "Option A: conda"
 
@@ -195,11 +238,14 @@ PROJECT            HOST                   PORT WAITING RUNNING COMPLETE WORKERS
 <netid>-trijet-tuto condorfe.crc.nd.edu   45697       5       0        0       0
 ```
 
-The factory found your manager by name, with 5 tasks waiting and no
+The factory found your manager by name, with tasks waiting and no
 workers, and thus requested 2 workers. (The host names in this module's
 sample outputs — `condorfe.crc.nd.edu` here, `d32cepyc*` pool nodes
 below — are the machines these pages were captured on; yours will show
-your own login node and whatever nodes your workers land on.) (The `factory-timeout: 120 MB` line
+your own login node and whatever nodes your workers land on.) (The numbers in this and the next section
+come from an earlier, smaller version of this run on the pool, 5 tasks over one
+file, so your counts are larger: 44 tasks today. The commands and the columns are
+the same.) (The `factory-timeout: 120 MB` line
 is a cosmetic typo in the factory's printout; the value is in fact 120
 seconds.)
 
@@ -209,7 +255,7 @@ with the HTCondor submit file it generated (`condor.submit`), the job log
 
 ## Watch it
 
-Use a **third terminal** (`cd ~/vine-cms-analysis-stack`), or, if you
+Use a **third terminal** (`cd ~/vine-cms-analysis-stack/examples/tutorial_nd`), or, if you
 prefer to wait, terminal 2 after the run.
 
 ### The worker jobs
@@ -300,36 +346,80 @@ also names the node:
 
 ## The result
 
-Back in terminal 1, the run took under a minute once the workers
-arrived:
+=== "coffea"
 
-<div class="term">
-<span class="t-green">success             </span> processor trijet/SingleMu ...n2012B_SingleMu.root[200000:300000] (id=29460336) cores=1(1) memory_mb=544(2016) wall_time_s=5(0)
-<span class="t-green">success             </span> processor trijet/SingleMu ...n2012B_SingleMu.root[100000:200000] (id=cadbabfd) cores=1(1) memory_mb=684(2016) wall_time_s=5(0)
-<span class="t-green">success             </span> processor trijet/SingleMu ...n2012B_SingleMu.root[300000:400000] (id=118a1a19) cores=1(1) memory_mb=580(2016) wall_time_s=5(0)
-<span class="t-green">success             </span> processor trijet/SingleMu ...n2012B_SingleMu.root[0:100000] (id=2f009f6e) cores=1(1) memory_mb=408(2016) wall_time_s=6(0)
-<span class="t-green">success             </span> processor trijet/SingleMu ...n2012B_SingleMu.root[400000:500000] (id=b3295482) cores=1(1) memory_mb=524(2016) wall_time_s=5(0)
-<span class="t-green">success             </span> final     trijet/SingleMu reduction of 5 partials (final) (id=707891ec) cores=1(1) memory_mb=190(2016) wall_time_s=1(0)
-trijet     [ <span class="t-green">██████████████████████████████</span> ]                   <span class="t-yellow">5</span>/<span class="t-red">0</span>/<span class="t-blue">5</span>
-reductions [ <span class="t-green">██████████████████████████████</span> ]                   <span class="t-yellow">1</span>/<span class="t-red">0</span>/<span class="t-blue">1</span>
-events     [ <span class="t-green">██████████████████████████████</span> ] <span class="t-yellow">500000</span>(<span class="t-green">500000</span>)/<span class="t-red">0</span>/<span class="t-blue">500000</span>
-datasets   [ <span class="t-green">██████████████████████████████</span> ]                     <span class="t-green">1</span>/<span class="t-cyan">1</span>
-trijet pT histogram: 217890 entries
-max b-tag histogram: 217890 entries
-</div>
+    Back in terminal 1, the run ended like this:
 
-The run processed five 100,000-event chunks, read straight from CERN by
-workers on the ND pool, followed by one final reduction. The allocation in
-parentheses is `2016` MB because, as in Module 3, a 1-core task gets its
-core's share of the worker's memory, and on these 4-core, ~8 GB workers
-that share is just above the 2000 MB you declared. Each chunk used
-400-700 MB of it, therefore the limit never came close to mattering;
-[Module 5](module-05-resources.md) shows how to make a memory limit
-actually bind.
+    <div class="term">
+    <span class="t-green">success             </span> processor trijet/SingleMu_Run2012B_193834-194270 ...4-194270/file_1.root[100000:200000] (id=292610cb) cores=1(1) memory_mb=568(2016) wall_time_s=1(0)
+    <span class="t-green">success             </span> processor trijet/SingleMu_Run2012B_193834-194270 ...4-194270/file_0.root[0:53733] (id=978fdac0) cores=1(1) memory_mb=249(2016) wall_time_s=1(0)
+    ...
+    <span class="t-green">success             </span> final     trijet/SingleMu_Run2012B_194790-195398 reduction of 8 partials (final) (id=76c03623) cores=1(1) memory_mb=203(2016) wall_time_s=1(0)
+    <span class="t-green">success             </span> final     trijet/SingleMu_Run2012B_195399-195841 reduction of 7 partials (final) (id=ae745006) cores=1(1) memory_mb=201(2016) wall_time_s=1(0)
+    <span class="t-green">success             </span> final     trijet/SingleMu_Run2012B_195842-196531 reduction of 9 partials (final) (id=cd294495) cores=1(1) memory_mb=201(2016) wall_time_s=1(0)
+    trijet     [ <span class="t-green">██████████████████████████████</span> ]                    <span class="t-yellow">44</span>/<span class="t-red">0</span>/<span class="t-blue">44</span>
+    reductions [ <span class="t-green">██████████████████████████████</span> ]                      <span class="t-yellow">6</span>/<span class="t-red">0</span>/<span class="t-blue">6</span>
+    events     [ <span class="t-green">██████████████████████████████</span> ] <span class="t-yellow">3736416</span>(<span class="t-green">3736416</span>)/<span class="t-red">0</span>/<span class="t-blue">3736416</span>
+    datasets   [ <span class="t-green">██████████████████████████████</span> ]                        <span class="t-green">5</span>/<span class="t-cyan">5</span>
+    SingleMu_Run2012B_193834-194270: 289270 entries (trijet pT), 289270 entries (max b-tag)
+    SingleMu_Run2012B_194271-194789: 497298 entries (trijet pT), 497298 entries (max b-tag)
+    SingleMu_Run2012B_194790-195398: 276498 entries (trijet pT), 276498 entries (max b-tag)
+    SingleMu_Run2012B_195399-195841: 247576 entries (trijet pT), 247576 entries (max b-tag)
+    SingleMu_Run2012B_195842-196531: 387297 entries (trijet pT), 387297 entries (max b-tag)
+    trijet pT histogram, all datasets: 1697939 entries
+    max b-tag histogram, all datasets: 1697939 entries
+    </div>
+
+    The run processed 44 chunks of up to 100,000 events, read straight from the
+    ND xrootd server by workers in the pool, followed by one final reduction per
+    dataset (plus one more for the dataset with more than 10 chunks).
+    The allocation in parentheses is `2016` MB because, as in Module 3, a 1-core
+    task gets its core's share of the worker's memory, and on these 4-core,
+    ~8 GB workers that share is just above the 2000 MB you declared. Each chunk
+    used 250-770 MB of it, therefore the limit never came close to mattering;
+    [Module 5](module-05-resources.md) shows how to make a memory limit
+    actually bind.
+
+=== "RDataFrame"
+
+    Back in terminal 1, the run took about two minutes, and ended like this:
+
+    <div class="term">
+    <span class="t-green">success             </span> processor trijet/SingleMu_Run2012B_193834-194270 ...4-194270/file_0.root[0:53733] (id=2ebe4cac) cores=1(1) memory_mb=865(2016) wall_time_s=4(0)
+    <span class="t-green">success             </span> processor trijet/SingleMu_Run2012B_193834-194270 ...4-194270/file_1.root[0:100000] (id=2ec0199e) cores=1(1) memory_mb=911(2016) wall_time_s=6(0)
+    ...
+    <span class="t-green">success             </span> final     trijet/SingleMu_Run2012B_194790-195398 reduction of 8 partials (final) (id=8e835d0d) cores=1(1) memory_mb=203(2016) wall_time_s=1(0)
+    <span class="t-green">success             </span> final     trijet/SingleMu_Run2012B_195399-195841 reduction of 7 partials (final) (id=1f0f7b6c) cores=1(1) memory_mb=201(2016) wall_time_s=1(0)
+    <span class="t-green">success             </span> final     trijet/SingleMu_Run2012B_195842-196531 reduction of 9 partials (final) (id=964518ff) cores=1(1) memory_mb=201(2016) wall_time_s=1(0)
+    trijet     [ <span class="t-green">██████████████████████████████</span> ]                    <span class="t-yellow">44</span>/<span class="t-red">0</span>/<span class="t-blue">44</span>
+    reductions [ <span class="t-green">██████████████████████████████</span> ]                      <span class="t-yellow">6</span>/<span class="t-red">0</span>/<span class="t-blue">6</span>
+    events     [ <span class="t-green">██████████████████████████████</span> ] <span class="t-yellow">3736416</span>(<span class="t-green">3736416</span>)/<span class="t-red">0</span>/<span class="t-blue">3736416</span>
+    datasets   [ <span class="t-green">██████████████████████████████</span> ]                        <span class="t-green">5</span>/<span class="t-cyan">5</span>
+    SingleMu_Run2012B_193834-194270: 289270 entries (trijet pT), 289270 entries (max b-tag)
+    SingleMu_Run2012B_194271-194789: 497298 entries (trijet pT), 497298 entries (max b-tag)
+    SingleMu_Run2012B_194790-195398: 276498 entries (trijet pT), 276498 entries (max b-tag)
+    SingleMu_Run2012B_195399-195841: 247576 entries (trijet pT), 247576 entries (max b-tag)
+    SingleMu_Run2012B_195842-196531: 387297 entries (trijet pT), 387297 entries (max b-tag)
+    trijet pT histogram, all datasets: 1697939 entries
+    max b-tag histogram, all datasets: 1697939 entries
+    </div>
+
+    The run processed 44 chunks of up to 100,000 events, read straight from the
+    ND xrootd server by workers in the pool, followed by one final reduction per
+    dataset (and one extra reduction in each dataset with more than 10 chunks).
+    The allocation in parentheses is `2016` MB because, as in Module 3, a 1-core
+    task gets its core's share of the worker's memory. Each chunk used 865-976
+    MB of it, about 750 MB of which is ROOT compiling `BestTrijet`, and took 4
+    to 8 seconds, as opposed to coffea's 1: every task compiles the C++ first.
+    The limit is still not close to binding; [Module 5](module-05-resources.md)
+    looks at what does bind it with RDataFrame.
+
+*The output of this section was captured with a local worker of the same size as the pool's (4 cores, 8064 MB), rather than on the pool itself, so your timings will differ.*
 
 This is perhaps the part worth pausing on. Your processor code didn't
-change between the laptop-sized synthetic files and a real NanoAOD file on
-another continent; only the dataset file and the distributor did.
+change between Module 2's run over `/project01` on the login node and this
+run on pool nodes reading over xrootd; only the dataset file and the
+distributor did.
 
 ## Certificates
 
@@ -347,14 +437,15 @@ starts, and goes through the following steps:
   invocation) and cleans up.
 
 !!! note "Today's data doesn't need a proxy"
-    `eospublic.cern.ch` serves CMS Open Data to anyone, thus the proxy
-    half of the wrapper does nothing today. However, you would need it for
+    `cmsxrootd.crc.nd.edu` served these files without a proxy when this
+    page was tested (from the login node), thus the proxy half of the
+    wrapper does nothing today. However, you would need it for
     real, access-controlled CMS data; in that case, put your proxy next to
     the wrapper and add it with another `--wrapper-input`. The wrapper is
     in today's setup so that the command you practice is the same command
     you would use later.
 
-## Clean up after yourself
+## Clean up
 
 On a shared pool, idle workers hold slots other people could use. Three
 settings already limit that.
@@ -365,7 +456,7 @@ script finished. With `timeout: 300`, a worker that never gets work exits
 after 5 minutes. Further, with `factory-timeout: 120`, the factory exits
 after 2 minutes without seeing your manager.
 
-However, don't rely on those alone. The factory looks your manager up
+The factory looks your manager up
 **by name in the catalog**, and the catalog keeps a manager's last status
 for a while after the manager is gone. If an earlier run of yours was
 killed while it still had tasks waiting, its stale entry keeps advertising

@@ -7,12 +7,26 @@
     few minutes. Thus, do every step on this page *before* the session; in
     the room, only the checks are run.
 
+## Pick your analysis implementation
+
+Today's analysis is written two ways. They compute the
+same thing, and everything around the analysis (the distributors, TaskVine,
+the factory, checkpoints, `failure_proportion`) is identical:
+
+- **coffea**: awkward arrays through coffea's `NanoEvents`, run by
+  `VineReduceCoffea`.
+- **RDataFrame**: ROOT's `RDataFrame`, with the per-event logic written as
+  a short piece of C++ that ROOT compiles on the fly, run by plain
+  `VineReduce`.
+
+Wherever the two differ, a page shows a pair of tabs labelled `coffea` and
+`RDataFrame`. Pick the same one on every page, and the site will switch the
+rest of the tabs for you. Both are installed by the environment below, so
+you can change your mind later by clicking the other tab.
+
 ## Clone
 
-Given that you're reading this on the web, there is nothing to clone *for
-the tutorial itself*. The one thing you do need is the software stack,
-`vine-cms-analysis-stack`, which carries the `environment.yml`/
-`pyproject.toml` that build today's environment:
+Clone the analysis stack `vine-cms-analysis-stack` to build today's environment:
 
 ```bash
 cd ~
@@ -20,15 +34,20 @@ git clone https://github.com/cooperative-computing-lab/vine-cms-analysis-stack.g
 cd ~/vine-cms-analysis-stack
 ```
 
-Stay in `~/vine-cms-analysis-stack/` for the rest of today.
+The tutorial's scripts and data manifests are already in the clone, under
+`examples/tutorial_nd/`, so there is nothing else to download.
 
 ## Create the environment
 
 Pick **one** of the two options. Both give you the same packages
 (`ndcctools` for TaskVine, `vine-reduce`, `coffea`, `awkward`, `uproot`,
-`xrootd`, `matplotlib`); the differences between them are in the
+`xrootd`, `matplotlib`, and `root` for RDataFrame); the differences
+between them are in the
 [Appendix](appendix.md#conda-vs-pixi-differences), and you don't need them
 today.
+
+Conda is the more tested path, but more and more applications are moving to use pixi.
+Environments made by pixi are essentially the same as the ones done with conda.
 
 === "Option A: conda"
 
@@ -44,21 +63,40 @@ today.
     ```
 
     Run everything through `pixi run` (e.g. `pixi run python
-    scripts/vr_trijet_iterative.py`) rather than activating an environment;
-    every command in this tutorial shows both options side by side.
+    scripts/vr_trijet_iterative.py`), or activating an environment with 
+    pixi shell.
+
+## Go to the tutorial directory
+
+Once the environment exists, move into the tutorial directory and stay there
+for the rest of today:
+
+```bash
+cd ~/vine-cms-analysis-stack/examples/tutorial_nd
+ls
+```
+
+```
+data  README.md  scripts
+```
+
+`scripts/` has one script per module, and `data/` has the dataset manifests
+described [below](#data-descriptions). Everything else you create today
+(`results/`, `checkpoints/`, `vine-run-info/`, `factory.json`, `plots/`)
+appears next to them. These are ignored by git.
 
 ## Verify
 
 === "Option A: conda"
 
     ```bash
-    python -c "import ndcctools.taskvine, vine_reduce, coffea; print('ok')"
+    python -c "import ndcctools.taskvine, vine_reduce, coffea, ROOT; print('ok')"
     ```
 
 === "Option B: pixi"
 
     ```bash
-    pixi run python -c "import ndcctools.taskvine, vine_reduce, coffea; print('ok')"
+    pixi run python -c "import ndcctools.taskvine, vine_reduce, coffea, ROOT; print('ok')"
     ```
 
 You should see:
@@ -67,9 +105,9 @@ You should see:
 ok
 ```
 
-If this fails, fix it now, since every later module depends on this
-import. A common issue is that the wrong environment is active
-(`conda env list` to check).
+Both flavors are checked, whichever one you picked. If this fails, fix it
+now, since every later module depends on this import. A common issue is
+that the wrong environment is active.
 
 ## Pack the environment for remote workers
 
@@ -77,8 +115,8 @@ From [Module 4](module-04-scale-out.md) on, your code runs on HTCondor
 pool nodes that don't have any of this installed. Therefore, VineReduce
 ships a packed copy of your environment along with every task, and
 `get_environment()` builds that tarball. Build it now: it takes a few
-minutes (2 min 17 s when this page was tested) and ~750 MB, and later
-calls reuse the cached copy instantly:
+minutes and comes to ~1.5 GB, and later calls reuse the cached copy
+instantly:
 
 === "Option A: conda"
 
@@ -94,110 +132,55 @@ calls reuse the cached copy instantly:
 
 It prints the path of the tarball it built. Module 4 explains what's in it.
 
-## Get today's data
+## Data descriptions
 
-There are two datasets today, both in the shape coffea's own preprocessing
-produces (`{dataset_name: {"metadata": {...}, "files": {path: {"object_path":
-"Events", "num_entries": N}}}}`). Thus, switching a script between them is
-a one-line change, rather than a processor-code change.
+Today's data is real CMS Open Data taken from the `Run2012B_SingleMu`.
 
-Fetch the real-data manifest and the synthetic-data generator:
+You need to be logged in `glados` or any `crc` frontend to see the data.
 
-```bash
-TUT=https://raw.githubusercontent.com/cooperative-computing-lab/vine-cms-analysis-stack-tutorials/main
-mkdir -p data scripts
-curl -sL -o data/datasets_small_real.json     "$TUT/data/datasets_small_real.json"
-curl -sL -o scripts/make_synthetic_data.py    "$TUT/scripts/make_synthetic_data.py"
-```
+- `data/datasets_vast.json` points at `/project01/ndcms/btovar/store/user/btovar/tutorial/SingleMu_Run2012B/...`,
+  on the VAST filesystem that your login node mounts. Modules
+  [2](module-02-local-distributor.md), [3](module-03-local-factory.md),
+  [6](module-06-checkpoints-restart.md), and
+  [9](module-09-failure-proportion.md) run on the login node and read these.
+- `data/datasets_xrootd.json` points at
+  `root://cmsxrootd.crc.nd.edu//store/user/btovar/tutorial/SingleMu_Run2012B/...`,
+  the same files over xrootd, with no grid proxy needed. Modules
+  [4](module-04-scale-out.md), [5](module-05-resources.md),
+  [7](module-07-result-postprocess.md), and
+  [8](module-08-multiple-processors.md) run on HTCondor pool nodes, and read
+  these.
 
-Generate the synthetic data (about 20 seconds):
-
-=== "Option A: conda"
-
-    ```bash
-    python scripts/make_synthetic_data.py
-    ```
-
-=== "Option B: pixi"
-
-    ```bash
-    pixi run python scripts/make_synthetic_data.py
-    ```
-
-```
-wrote /users/<you>/vine-cms-analysis-stack/data/datasets_synthetic.json
-```
-
-### `datasets_synthetic.json`
-
-This is one dataset, `ttbar_like`, with 10 ROOT files under
-`data/synthetic/`, 2,523,470 events, and ~490 MB. `make_synthetic_data.py`
-calls this repo's own `examples/write_test_data.py` with a fixed random
-seed, so everyone gets exactly the same events, and thus the same histogram
-counts as these pages show.
+Look at the first dataset:
 
 ```bash
-head -12 data/datasets_synthetic.json
+head -22 data/datasets_vast.json
 ```
 
 ```json
 {
-  "ttbar_like": {
+  "SingleMu_Run2012B_193834-194270": {
     "metadata": {
-      "dataset": "ttbar_like"
+      "dataset": "SingleMu_Run2012B_193834-194270",
+      "source": "Run2012B_SingleMu, CMS Open Data (IRIS-HEP ADL benchmark input), eospublic.cern.ch; first 3 files of this dataset's split; dataset name is an illustrative run-range label, not derived from these files' actual run numbers"
     },
     "files": {
-      "/users/<you>/vine-cms-analysis-stack/data/synthetic/ttbar_like/file_0.root": {
+      "/project01/ndcms/btovar/store/user/btovar/tutorial/SingleMu_Run2012B/SingleMu_Run2012B_193834-194270/file_0.root": {
         "object_path": "Events",
-        "num_entries": 208925
+        "num_entries": 53733
       },
-      "/users/<you>/vine-cms-analysis-stack/data/synthetic/ttbar_like/file_1.root": {
+      "/project01/ndcms/btovar/store/user/btovar/tutorial/SingleMu_Run2012B/SingleMu_Run2012B_193834-194270/file_1.root": {
         "object_path": "Events",
+        "num_entries": 222177
+      },
+      "/project01/ndcms/btovar/store/user/btovar/tutorial/SingleMu_Run2012B/SingleMu_Run2012B_193834-194270/file_2.root": {
+        "object_path": "Events",
+        "num_entries": 395172
+      }
+    }
+  },
 ```
 
 The paths are absolute on purpose: from Module 3 on, tasks run inside a
 TaskVine worker's own sandbox directory, where a relative path wouldn't
-resolve. Modules [2](module-02-local-distributor.md),
-[3](module-03-local-factory.md), [6](module-06-checkpoints-restart.md), and
-[9](module-09-failure-proportion.md) run over this dataset.
-
-### `datasets_small_real.json`
-
-This is real CMS Open Data: one NanoAOD file read over `xrootd` from
-CERN's public EOS, with no grid proxy needed:
-
-```bash
-cat data/datasets_small_real.json
-```
-
-```json
-{
-  "SingleMu": {
-    "metadata": {
-      "dataset": "SingleMu",
-      "source": "Run2012B_SingleMu, CMS Open Data (IRIS-HEP ADL benchmark input), eospublic.cern.ch"
-    },
-    "files": {
-      "root://eospublic.cern.ch//eos/root-eos/benchmark/Run2012B_SingleMu.root": {
-        "object_path": "Events",
-        "num_entries": 500000
-      }
-    }
-  }
-}
-```
-
-`num_entries` is capped at 500,000 of the file's ~53.4M events, so that a
-live run finishes in minutes. This is the exact file the ADL benchmarks,
-where `trijet_processor` comes from, were written against. Modules
-[4](module-04-scale-out.md), [5](module-05-resources.md),
-[7](module-07-result-postprocess.md), and
-[8](module-08-multiple-processors.md) run over it, on the HTCondor pool.
-
-### `datasets_real.json` - not used today
-
-The same `Run2012B_SingleMu` open-data file as `datasets_small_real.json`
-above, but split into 205 local files across 5 datasets - built once,
-ahead of time, by `scripts/make_real_scale_data.py`, not fetched or
-generated live today. See [Module 10](module-10-wrapup.md)'s closing
-discussion.
+resolve.

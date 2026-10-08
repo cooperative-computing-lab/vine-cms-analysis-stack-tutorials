@@ -28,6 +28,7 @@ theme:
     - navigation.instant
     - navigation.footer
     - content.code.copy
+    - content.tabs.link
     - toc.integrate
 
 extra_css:

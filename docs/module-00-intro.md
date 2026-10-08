@@ -23,6 +23,22 @@ EFT search, runs on this exact stack in production (see
 [Module 10](module-10-wrapup.md)). Thus, the trijet selection is a toy
 only with regards to its size, not its structure.
 
+The same analysis is written two ways in this tutorial, and you pick one in
+[Module 1](module-01-setup.md#pick-your-analysis-flavor):
+
+- **coffea**: the processor is a Python function over awkward arrays. The
+  trijet is built from array operations (`ak.combinations`, `ak.argmin`, and
+  so on), and the result is `hist.Hist` objects.
+- **RDataFrame**: the processor is a Python function that describes a
+  ROOT `RDataFrame` computation (`Filter`, `Define`, `Histo1D`). The
+  per-event trijet search is a short C++ function that ROOT compiles when
+  the processor first runs, and the result is converted to the same
+  `hist.Hist` objects.
+
+Both are just "a function applied to a chunk of events", which is all that
+VineReduce asks of a processor. Thus, everything below the processor is
+shared.
+
 ## The shape of the stack
 
 Every run today has the same two sides. Your physics code, VineReduce, and
@@ -52,7 +68,7 @@ whatever worker picks the chunk up:
 
 ## Why VineReduce, alongside coffea
 
-coffea's own executors couple two concerns that don't have to travel
+coffea's own executors couple two concerns that don't have to be solved
 together. The first is **parallelism**, that is, how one dataset's work is
 split into chunks, mapped, and reduced back together. The second is
 **distribution**, which is how those chunks get scheduled onto, transferred
@@ -61,7 +77,9 @@ to, and run on remote machines.
 VineReduce owns the first and hands the second to a distributor (today,
 TaskVine), so that each can change without touching the other. This is why,
 all session, your processor code never changes; the only thing that changes
-is what it's handed to.
+is what it's handed to. It is also why the processor can be built from
+coffea or from RDataFrame: VineReduce only needs a function that takes a
+chunk.
 
 ## What you'll stand up today
 
