@@ -302,7 +302,8 @@ Note that there is no `rm -rf` this time. On startup, VineReduce reads
 **final** row is taken as that pipeline's answer, with nothing
 rerun. An **intermediate** row, like ours, goes straight back into the
 pool of partial results, ready to be folded into the next reduction. In
-both cases, the files a checkpoint covers are skipped when chunks are cut.
+both cases, the events a checkpoint covers are not cut into chunks again;
+with one chunk per file, as here, that means whole files are skipped.
 
 === "coffea"
 
@@ -418,10 +419,9 @@ pipeline, recording its result size and peak resource use, which is why it
 wasn't there after the interrupted run.
 
 !!! warning "Don't rerun a finished run without `rm -rf results checkpoints`"
-    With vine-reduce 2026.10.1, rerunning after the run has completed
-    doesn't exit. The final rows are picked up; however, the script then sits
-    waiting indefinitely. Clear `results/` and `checkpoints/` before starting
-    over.
+    Rerunning after the run has completed doesn't exit. The final rows are
+    picked up; however, the script then sits waiting indefinitely. Clear
+    `results/` and `checkpoints/` before starting over.
 
 !!! question "Try it"
     - Interrupt the rerun too, and then run it again. Each resume picks up

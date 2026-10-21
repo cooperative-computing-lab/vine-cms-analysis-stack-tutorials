@@ -134,7 +134,7 @@ allocation to under- or overshoot, this is where you will see it, as in
 
 Each bar is `[ bar ] numbers`. The bar is
 <span class="clr-green">**green**</span> for done,
-<span class="clr-red">**red**</span> for permanently failed, and
+<span class="clr-red">**red**</span> for failed attempts (a call that is retried counts each time it fails), and
 <span class="clr-gray">**gray**</span> for whatever is left; there is no gray
 above, since the run is over. The numbers spell out the same counts, although
 not every row has all three:
