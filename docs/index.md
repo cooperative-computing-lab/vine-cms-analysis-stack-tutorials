@@ -1,28 +1,42 @@
 # TaskVine / VineReduce / vine-cms-analysis-stack
 
-This is a 3-hour hands-on tutorial for HEP graduate students.
+A 3-hour hands-on tutorial for HEP graduate students. You take one real CMS
+analysis from a single process on a login node, to a TaskVine worker on the
+same machine, to an HTCondor pool, while the processor code stays the same
+each time. Along the way you learn to read a run's health, tune it, restart
+it without redoing work, and keep it going when some chunks fail.
 
-**Audience:** students comfortable with a terminal, Python, and an editor;
-no background with TaskVine, coffea, or HTCondor is assumed.
+[Start: Module 0 - Intro](module-00-intro.md){ .md-button .md-button--primary }
+[Set up before the session](module-01-setup.md){ .md-button }
 
-**Two flavors:** the analysis is written both with coffea and with ROOT's
-RDataFrame, and you choose the one you prefer. Wherever the two differ, a
-page shows `coffea` and `RDataFrame` tabs, and a click on one switches every
-other such tab on the site. Everything else, namely VineReduce, TaskVine,
-the factory, and the pool, is shared between them. [Module
+## Who this is for
+
+Students comfortable with a terminal, Python, and an editor. No background
+with TaskVine, coffea, or HTCondor is assumed.
+
+!!! warning "Before the session"
+    Do these ahead of time; they are not done live:
+
+    - Have a glados account.
+    - Have conda or pixi working.
+    - Clone `cooperative-computing-lab/vine-cms-analysis-stack` and create
+      its environment, following [Module 1](module-01-setup.md). Building
+      and packing the environment can take up to 15 minutes each.
+    - Pick an analysis flavor, coffea or RDataFrame (see below).
+
+## Pick a flavor: coffea or RDataFrame
+
+The analysis is written both with coffea and with ROOT's RDataFrame, and you
+choose the one you prefer. Wherever the two differ, a page shows `coffea`
+and `RDataFrame` tabs, and a click on one switches every other such tab on
+the site. Everything else, namely VineReduce, TaskVine, the factory, and the
+pool, is shared between them. Both are installed by the same environment, so
+you can switch later. [Module
 1](module-01-setup.md#pick-your-analysis-implementation) says more.
 
-!!! warning "Prerequisite check (send before the session, not done live)"
-    - A glados account
-    - conda (or pixi) working
-    - `cooperative-computing-lab/vine-cms-analysis-stack` cloned and its
-      environment created ([Module 1](module-01-setup.md))
-    - A choice of analysis flavor, coffea or RDataFrame (both are in the
-      environment; see below)
+## What you will learn
 
-## Learning objectives
-
-By the end, a student can:
+By the end, you can:
 
 1. Explain the distributor/executor split and why VineReduce separates
    chunking/reduction logic from cluster execution.
@@ -41,47 +55,17 @@ By the end, a student can:
 9. Explain and demonstrate `failure_proportion`.
 10. Know where to ask for help afterward.
 
-## Infrastructure plan
+## The data
 
-## Dataset plan: real data, two manifests
+Every module runs on real CMS Open Data from `Run2012B_SingleMu`, the input
+of the IRIS-HEP ADL benchmarks: 5 datasets of 3 files each, 15 ROOT files
+and 3,736,416 events in all. The same files are read from the VAST
+filesystem by the modules that run on the login node, and over xrootd by
+the modules that run on the pool. [Module 1](module-01-setup.md#data-descriptions)
+shows the two manifests, and the
+[Appendix](appendix.md#about-the-tutorial-dataset) has the details.
 
-Every module runs on real CMS Open Data: the first 3 files of each of 5
-datasets, taken from the `Run2012B_SingleMu` open-data file that IRIS-HEP's
-ADL benchmarks (the source of this repo's `trijet_processor`) run over. That is
-15 ROOT files and 3,736,416 events. The files are not generated or built live:
-they were split out ahead of time by `scripts/make_real_scale_data.py` (seeded,
-so the split is reproducible) and are read in two ways, each with its own
-manifest.
-
-Both manifests use coffea's minimal preprocessed shape
-(`{name: {"metadata": {...}, "files": {path: {"object_path": "Events",
-"num_entries": N}}}}`), and list the same files, so they are interchangeable
-without any change to the processor code; the only thing that changes is
-which manifest a script loads. The RDataFrame scripts read the very same
-files.
-
-1. **`data/datasets_vast.json`**: the files on VAST,
-   `/project01/ndcms/btovar/tutorial/tutorial/SingleMu_Run2012B/<dataset>/file_<i>.root`
-   (absolute paths, world-readable). The local Modules
-   [2](module-02-local-distributor.md), [3](module-03-local-factory.md),
-   [6](module-06-checkpoints-restart.md), and
-   [9](module-09-failure-proportion.md) run on the login node and read these.
-2. **`data/datasets_xrootd.json`**: the same files as
-   `root://cmsxrootd.crc.nd.edu//store/user/btovar/tutorial/SingleMu_Run2012B/<dataset>/file_<i>.root`,
-   with no grid proxy needed (checked from the login node). Modules
-   [4](module-04-scale-out.md), [5](module-05-resources.md),
-   [7](module-07-result-postprocess.md), and
-   [8](module-08-multiple-processors.md) run on HTCondor pool nodes, and read
-   these; Module 5 uses just one of the 15 files.
-
-The five dataset names (`SingleMu_Run2012B_193834-194270`, ...) are styled
-after real CMS run-range dataset splits, but are illustrative only: each
-file's events were picked by position in the source file, not by any event's
-actual run number, so a name's range isn't a claim about what's really inside
-that dataset. The full split (205 files, all 53,446,198 events) is described in
-[Module 10](module-10-wrapup.md).
-
-## Timing table
+## Schedule
 
 | # | Module | Minutes |
 |---|---|---|
@@ -99,4 +83,5 @@ that dataset. The full split (205 files, all 53,446,198 events) is described in
 | | **Total** | **180** |
 
 Reference material that is not counted in the 180 minutes lives in the
-[Appendix](appendix.md).
+[Appendix](appendix.md). After the session, [Module
+10](module-10-wrapup.md) lists where to get help.

@@ -91,3 +91,38 @@ Given these requirements, it was confirmed not adaptable into a runnable
 15-30 min segment without someone on TopEFT providing a small public EFT
 sample + WC list in advance. Therefore, use it only as a "this is what a
 full production analysis looks like on top of the same API" slide.
+
+## About the tutorial dataset
+
+Every module runs on real CMS Open Data: the first 3 files of each of 5
+datasets, taken from the `Run2012B_SingleMu` open-data file that IRIS-HEP's
+ADL benchmarks (the source of the stack's `trijet_processor`) run over. That
+is 15 ROOT files and 3,736,416 events. The files are not generated or built
+live: they were split out ahead of time, with a fixed seed so the split is
+reproducible.
+
+Both manifests use coffea's minimal preprocessed shape
+(`{name: {"metadata": {...}, "files": {path: {"object_path": "Events",
+"num_entries": N}}}}`) and list the same files, so they are interchangeable
+without any change to the processor code; the only thing that changes is
+which manifest a script loads. The RDataFrame scripts read the very same
+files.
+
+1. **`data/datasets_vast.json`**: the files on VAST,
+   `/project01/ndcms/btovar/tutorial/tutorial/SingleMu_Run2012B/<dataset>/file_<i>.root`
+   (absolute paths, world-readable). Modules
+   [2](module-02-local-distributor.md), [3](module-03-local-factory.md),
+   [6](module-06-checkpoints-restart.md), and
+   [9](module-09-failure-proportion.md) run on the login node and read these.
+2. **`data/datasets_xrootd.json`**: the same files as
+   `root://cmsxrootd.crc.nd.edu//store/user/btovar/tutorial/SingleMu_Run2012B/<dataset>/file_<i>.root`,
+   with no grid proxy needed. Modules [4](module-04-scale-out.md),
+   [5](module-05-resources.md), [7](module-07-result-postprocess.md), and
+   [8](module-08-multiple-processors.md) run on HTCondor pool nodes and read
+   these; Module 5 uses just one of the 15 files.
+
+The five dataset names (`SingleMu_Run2012B_193834-194270`, ...) are styled
+after real CMS run-range dataset splits, but are illustrative only: each
+file's events were picked by position in the source file, not by any event's
+actual run number, so a name's range isn't a claim about what's really inside
+that dataset. The full split has 205 files and all 53,446,198 events.
