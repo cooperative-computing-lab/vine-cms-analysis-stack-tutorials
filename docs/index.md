@@ -12,11 +12,6 @@ other such tab on the site. Everything else, namely VineReduce, TaskVine,
 the factory, and the pool, is shared between them. [Module
 1](module-01-setup.md#pick-your-analysis-implementation) says more.
 
-**Format:** Software-Carpentries style, that is, a short framing followed
-by live-coding along, in short build-run-break-fix cycles. This comes to
-~15 min of lecture and ~165 min hands-on (see the
-[timing table](#timing-table)).
-
 !!! warning "Prerequisite check (send before the session, not done live)"
     - A glados account
     - conda (or pixi) working
@@ -24,11 +19,6 @@ by live-coding along, in short build-run-break-fix cycles. This comes to
       environment created ([Module 1](module-01-setup.md))
     - A choice of analysis flavor, coffea or RDataFrame (both are in the
       environment; see below)
-
-    Given that you are reading this tutorial from the web, there is nothing
-    else to clone. Every module's script and the dataset manifests are
-    already in your `vine-cms-analysis-stack` clone, under
-    `examples/tutorial_nd/`.
 
 ## Learning objectives
 
@@ -52,43 +42,6 @@ By the end, a student can:
 10. Know where to ask for help afterward.
 
 ## Infrastructure plan
-
-!!! info "Decide/confirm before the session - not a student task"
-    - **Shared vine_catalog**: reuse ND's real catalog
-      (`catalog.cse.nd.edu`, `backup-catalog.cse.nd.edu`, the same servers
-      `examples/scale-cortado`'s workers already report to — they are baked
-      into the worker command line in the factory's generated
-      `vine-factory-*/condor.submit`), rather than standing up a new
-      catalog instance for the class.
-    - **Shared HTCondor pool**: glados' real pool, where the factory submits
-      worker jobs via `batch_type="condor"`, with
-      `vine-factory-*/condor.submit` as the template. Each student's factory
-      dispatches into this same pool.
-    - **Per student**: their own `vine.Manager`/`TaskVineDistributor` (with
-      its own port) and their own `vine_factory` process, named uniquely so
-      that the catalog and `vine_status` can tell students' runs apart. The
-      proposed convention is manager name `<netid>-trijet-tutorial` and
-      factory `-M '<netid>-trijet-tutorial'`.
-
-!!! info "Decided"
-    - **Per-student worker cap**, in each student's `factory.json`: at most
-      2 workers, 4 cores, 8000 MB memory, and 16000 MB disk each
-      (`--single-shot`, `timeout` 300 s, `factory-timeout` 120 s).
-    - **`condor-requirements`**: none from glados, in every module: every
-      node in glados's pool mounts `/project01` (and `/cvmfs`), and none
-      advertises `has_vast`, so `(has_vast)` would match no node at all.
-      Module 7 shows `(has_vast)` only for submitting from another CRC front
-      end (e.g. condorfe), whose pool mounts `/project01` on some nodes only.
-
-!!! danger "TODO before the session"
-    Confirm that the `<netid>-trijet-tutorial` naming convention does not
-    collide with other CCL or production use of the same catalog, and get a
-    headcount to check that 2 workers per student is sane for the pool
-    under class load. On 2026-10-21 glados's pool (collector
-    `deepthought.crc.nd.edu`) had 46 machines, nearly all busy: a
-    4-core/8000 MB job sometimes started in seconds and sometimes sat idle
-    for over 10 minutes (`condor_q -better-analyze`: "44 slots would match
-    if drained").
 
 ## Dataset plan: real data, two manifests
 
