@@ -113,7 +113,7 @@ restart it with the same command.
     your C++, rather than by your chunk size, and a smaller chunk saves no
     memory at all.
 
-    *The RDataFrame output in this module was captured with a local worker of the same size as the pool's (4 cores, 8064 MB), rather than on the pool itself, so your hosts and timings will differ.*
+    *The RDataFrame output in this module was captured with a local worker of the same size as the pool's (4 cores, 8064 MB), rather than on the pool itself, so your hosts and timings will differ. The `430713 700` run below is the exception: it was captured on the glados pool, where it behaves differently from a local worker.*
 
 ## Declaring resources
 
@@ -163,18 +163,46 @@ reminder that the two limits need not look alike.
         pixi run python scripts/vr_trijet_resources.py 430713 700
         ```
 
-    If TaskVine's resource monitor catches the call over its limit, this is
-    what VineReduce does, and what the memory table above predicts:
+    <div class="term">
+    chunksize=430713 memory_mb=700 reduction_size=10
+    ...
+    <span class="t-red">resource_exhaustion </span> processor trijet/SingleMu_Run2012B_194790-195398 ...0-195398/file_0.root[0:430713] (id=94510b8b) cores=0(1) memory_mb=1428(700) wall_time_s=1(0)
+    <span class="t-green">success             </span> processor trijet/SingleMu_Run2012B_194790-195398 ...0-195398/file_0.root[430712:430713] (id=bd0c82ec) cores=1(1) memory_mb=255(700) wall_time_s=1(0)
+    <span class="t-red">resource_exhaustion </span> processor trijet/SingleMu_Run2012B_194790-195398 ...0-195398/file_0.root[0:215356] (id=0b51ef9a) cores=0(1) memory_mb=825(700) wall_time_s=1(0)
+    <span class="t-red">resource_exhaustion </span> processor trijet/SingleMu_Run2012B_194790-195398 ...0-195398/file_0.root[215356:430712] (id=78fe977c) cores=0(1) memory_mb=921(700) wall_time_s=1(0)
+    <span class="t-green">success             </span> processor trijet/SingleMu_Run2012B_194790-195398 ...0-195398/file_0.root[323034:430712] (id=a41c2910) cores=1(1) memory_mb=588(1245) wall_time_s=3(0)
+    <span class="t-green">success             </span> processor trijet/SingleMu_Run2012B_194790-195398 ...0-195398/file_0.root[107678:215356] (id=80f2c45f) cores=1(1) memory_mb=645(1245) wall_time_s=3(0)
+    <span class="t-green">success             </span> processor trijet/SingleMu_Run2012B_194790-195398 ...0-195398/file_0.root[0:107678] (id=ff6d9fc3) cores=1(1) memory_mb=616(1245) wall_time_s=3(0)
+    <span class="t-green">success             </span> processor trijet/SingleMu_Run2012B_194790-195398 ...0-195398/file_0.root[215356:323034] (id=3cac1a00) cores=1(1) memory_mb=778(1245) wall_time_s=4(0)
+    <span class="t-green">success             </span> final     trijet/SingleMu_Run2012B_194790-195398 reduction of 5 partials (final) (id=d6c1f4dd) cores=1(1) memory_mb=201(2016) wall_time_s=1(0)
+    trijet     [ <span class="t-green">██████████████████████████████</span> ]                   <span class="t-yellow">5</span>/<span class="t-red">3</span>/<span class="t-blue">2</span>
+    reductions [ <span class="t-green">██████████████████████████████</span> ]                   <span class="t-yellow">1</span>/<span class="t-red">0</span>/<span class="t-blue">1</span>
+    events     [ <span class="t-green">██████████████████████████████</span> ] <span class="t-yellow">430713</span>(<span class="t-green">430713</span>)/<span class="t-red">861425</span>/<span class="t-blue">430713</span>
+    datasets   [ <span class="t-green">██████████████████████████████</span> ]                     <span class="t-green">1</span>/<span class="t-cyan">1</span>
+    trijet pT histogram: 206251 entries
+    max b-tag histogram: 206251 entries
+    </div>
 
-    1. `[0:430713]`, the whole file, is killed at over its 700 MB limit. That is a
-       `resource_exhaustion`, and thus the `trijet` bar's red count goes up.
+    Read it top to bottom; it is what the memory table above predicts:
+
+    1. `[0:430713]`, the whole file, is killed at 1,428 MB, over its 700 MB limit,
+       one second in. That is a `resource_exhaustion`, and thus the `trijet` bar's
+       red count goes up.
     2. VineReduce **halves the chunksize** and cuts the file again, into
-       `[0:215356]` and `[215356:430713]`.
-    3. `[0:215356]` still needs about 990 MB, so it is killed and halved again,
-       into `[0:107678]` and `[107678:215356]`.
-    4. The smaller pieces need about 615 MB, which fits. They finish, one final
-       reduction folds the partial results, and the answer is the same **206,251**
-       entries that a run without a limit gives.
+       `[0:215356]`, `[215356:430712]`, and a one-event `[430712:430713]` left over
+       by the odd total.
+    3. The halves still need more than 700 MB (825 and 921 MB when killed), so
+       both are killed and halved again, into pieces of 107,678 events.
+    4. Those pieces need about 600-800 MB, and they were allocated 1,245 MB
+       rather than 700 (`memory_mb=616(1245)`), so they fit. They finish, one
+       final reduction folds the 5 partial results, and the answer is the same
+       **206,251** entries that a run without a limit gives.
+
+    The red `861425` on the events bar counts the events in the three killed
+    calls (430,713 + 215,356 + 215,356), rather than events lost:
+    `430713(430713)` shows that all of them made it into the result. (Don't be
+    thrown by the `5/3/2` on the `trijet` bar either: as Module 2 noted, the
+    task totals are estimates, and halving chunks mid-run throws them off.)
 
     The rules behind this are fairly simple. On `resource_exhaustion`,
     `chunksize` is halved, and the halved size applies to chunks not yet cut.
@@ -187,13 +215,14 @@ reminder that the two limits need not look alike.
 
     !!! warning "Your run may not break at all"
         The resource monitor checks memory by sampling, so an over-limit call
-        isn't always caught, in particular when it is short. When this page was
-        tested, the whole-file call took 2 seconds and finished at 1,837 MB
-        under its 700 MB limit, with no `resource_exhaustion` at all, in 5 tries
-        out of 5 (it printed `trijet 1/0/1` and 206,251 entries), and even with a
-        limit of 300 MB. For that reason, no output of a kill is shown here for
-        coffea. Either way, the answer is correct; the only thing that changes is
-        how much work is thrown away and redone.
+        isn't always caught, in particular when it is short. The output above
+        is from the glados pool, where the kill happened on the first try.
+        When this page was tested on another machine, however, the whole-file
+        call took 2 seconds and finished at 1,837 MB under its 700 MB limit,
+        with no `resource_exhaustion` at all, in 5 tries out of 5 (it printed
+        `trijet 1/0/1` and 206,251 entries). Either way, the answer is
+        correct; the only thing that changes is how much work is thrown away
+        and redone.
 
 === "RDataFrame"
 
@@ -218,41 +247,48 @@ reminder that the two limits need not look alike.
     <div class="term">
     chunksize=430713 memory_mb=700 reduction_size=10
     ...
-    <span class="t-red">resource_exhaustion </span> processor trijet/SingleMu_Run2012B_194790-195398 ...0-195398/file_0.root[0:430713] (id=ccaae557) cores=1(1) memory_mb=939(700) wall_time_s=1(0)
-    <span class="t-green">success             </span> processor trijet/SingleMu_Run2012B_194790-195398 ...0-195398/file_0.root[430712:430713] (id=62d0286e) cores=1(1) memory_mb=894(1973) wall_time_s=4(0)
-    <span class="t-green">success             </span> processor trijet/SingleMu_Run2012B_194790-195398 ...0-195398/file_0.root[0:215356] (id=3004b8ad) cores=1(1) memory_mb=979(1973) wall_time_s=9(0)
-    <span class="t-green">success             </span> processor trijet/SingleMu_Run2012B_194790-195398 ...0-195398/file_0.root[215356:430712] (id=48f127bc) cores=1(1) memory_mb=979(1973) wall_time_s=10(0)
-    <span class="t-green">success             </span> final     trijet/SingleMu_Run2012B_194790-195398 reduction of 3 partials (final) (id=66f233ad) cores=1(1) memory_mb=202(2016) wall_time_s=1(0)
-    trijet     [ <span class="t-green">██████████████████████████████</span> ]                   <span class="t-yellow">3</span>/<span class="t-red">1</span>/<span class="t-blue">2</span>
-    reductions [ <span class="t-green">██████████████████████████████</span> ]                   <span class="t-yellow">1</span>/<span class="t-red">0</span>/<span class="t-blue">1</span>
-    events     [ <span class="t-green">██████████████████████████████</span> ] <span class="t-yellow">430713</span>(<span class="t-green">430713</span>)/<span class="t-red">430713</span>/<span class="t-blue">430713</span>
-    datasets   [ <span class="t-green">██████████████████████████████</span> ]                     <span class="t-green">1</span>/<span class="t-cyan">1</span>
-    trijet pT histogram: 206251 entries
-    max b-tag histogram: 206251 entries
+    <span class="t-red">resource_exhaustion </span> processor trijet/SingleMu_Run2012B_194790-195398 ...0-195398/file_0.root[0:430713] (id=4828be1f) cores=0(1) memory_mb=829(700) wall_time_s=1(0)
+    <span class="t-red">resource_exhaustion </span> processor trijet/SingleMu_Run2012B_194790-195398 ...0-195398/file_0.root[215356:430712] (id=2e4e1916) cores=0(1) memory_mb=826(700) wall_time_s=1(0)
+    <span class="t-red">resource_exhaustion </span> processor trijet/SingleMu_Run2012B_194790-195398 ...0-195398/file_0.root[430712:430713] (id=84f1fe4f) cores=0(1) memory_mb=816(700) wall_time_s=1(0)
+    <span class="t-red">resource_exhaustion </span> processor trijet/SingleMu_Run2012B_194790-195398 ...0-195398/file_0.root[0:215356] (id=e3e66ad4) cores=0(1) memory_mb=816(700) wall_time_s=1(0)
+    <span class="t-red">resource_exhaustion </span> processor trijet/SingleMu_Run2012B_194790-195398 ...0-195398/file_0.root[215356:323034] (id=55d4c579) cores=0(1) memory_mb=828(700) wall_time_s=1(0)
+    <span class="t-red">resource_exhaustion </span> processor trijet/SingleMu_Run2012B_194790-195398 ...0-195398/file_0.root[323034:430712] (id=151cfcf6) cores=0(1) memory_mb=829(700) wall_time_s=1(0)
+    ...
+    trijet     [ <span class="t-red">██████████████████████████████</span> ]             <span class="t-yellow">0</span>/<span class="t-red">29</span>/<span class="t-blue">17</span>
+    reductions [ ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ ]               <span class="t-yellow">0</span>/<span class="t-red">0</span>/<span class="t-blue">2</span>
+    events     [ <span class="t-red">██████████████████████████████</span> ] <span class="t-yellow">0</span>(<span class="t-green">0</span>)/<span class="t-red">1749771</span>/<span class="t-blue">430713</span>
+    datasets   [ ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ ]                 <span class="t-green">0</span>/<span class="t-cyan">1</span>
+    Traceback (most recent call last):
+    ...
+    vine_reduce.pipeline.VineReduceError: processor 'trijet' exhausted resources on root://cmsxrootd.crc.nd.edu//store/user/btovar/tutorial/SingleMu_Run2012B/SingleMu_Run2012B_194790-195398/file_0.root[215355:215356] at the minimum chunk size (1000 events); cannot retry smaller.
     </div>
 
     Read it top to bottom:
 
-    1. `[0:430713]`, the whole file, was killed at 939 MB, over its 700 MB limit,
-       one second in. That is ROOT compiling `BestTrijet`, before the events were
-       read, and a `resource_exhaustion`; the `trijet` bar's red count goes up.
+    1. `[0:430713]`, the whole file, was killed at 829 MB, over its 700 MB limit,
+       one second in. That is ROOT starting up and compiling `BestTrijet`, before
+       the events were read, and a `resource_exhaustion`; the `trijet` bar's red
+       count goes up.
     2. VineReduce **halved the chunksize** and cut the file again, into
        `[0:215356]`, `[215356:430712]` and a one-event `[430712:430713]` left over by
-       the odd total.
-    3. These retries were allocated **1,973 MB** rather than 700 (see
-       `memory_mb=979(1973)`), and finished.
+       the odd total. Each of them, even the one-event chunk, was killed at about
+       the same 820 MB, and so were their halves, and theirs.
+    3. Halving stopped at `minimum_chunksize` (1000 events). A chunk that is still
+       too big at that size is given up on, and since a whole dataset of yours
+       could not be processed, the run stopped with `VineReduceError`.
 
-    The run succeeded, but the halving did not help: the halved chunks needed the
-    same 979 MB, since memory does not depend on the chunk. What let it finish was
-    the larger allocation that the retries got, and it cost a killed call and
-    more, smaller ones. The red `430713` on the events bar counts the events in
-    the killed call, rather than events lost: `430713(430713)` shows that all of
-    them made it into the result. (Don't be thrown by the `3/1/2` on the `trijet`
-    bar either: as Module 2 noted, the task totals are estimates, and halving
-    chunks mid-run throws them off.)
+    Halving could not help, because memory does not depend on the chunk: every
+    call needs ROOT's ~820 MB floor, more than the 700 MB allowed, whatever its
+    size. The red `1749771` on the events bar counts the events in all the killed
+    calls, and `0(0)` shows that none made it into a result. (Each killed call
+    also prints a few lines starting with `C system headers (glibc/Xcode/Windows
+    SDK) must be installed` and ending in `fatal error: 'assert.h' file not
+    found`, followed by a `cctools-monitor ... sending kill signal` line. They
+    come from ROOT on the pool nodes and are not why the calls were killed;
+    `BestTrijet` itself does not need those headers.)
 
     The lesson is that VineReduce's recovery is for limits that are wrong for
-    the *chunk*; one that is wrong for the *task* is better fixed by a limit
+    the *chunk*; one that is wrong for the *task* has to be fixed by a limit
     above the floor.
 
 ## Fix it: a limit that fits

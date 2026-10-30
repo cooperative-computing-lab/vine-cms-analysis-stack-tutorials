@@ -132,9 +132,9 @@ the run stops right there:
     datasets   [ <span class="t-gray">░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░</span> ]                     <span class="t-green">0</span>/<span class="t-cyan">5</span>
     Traceback (most recent call last):
     ...
-    vine_reduce.pipeline.VineReduceError: processor 'trijet' failed on /project01/ndcms/btovar/store/user/btovar/tutorial/SingleMu_Run2012B/SingleMu_Run2012B_193834-194270/DOES_NOT_EXIST.root[0:50000] after 3 attempts (attempts=3):
+    vine_reduce.pipeline.VineReduceError: processor 'trijet' failed on /project01/ndcms/btovar/tutorial/tutorial/SingleMu_Run2012B/SingleMu_Run2012B_193834-194270/DOES_NOT_EXIST.root[0:50000] after 3 attempts (attempts=3):
     ...
-    FileNotFoundError: [Errno 2] No such file or directory: '/project01/ndcms/btovar/store/user/btovar/tutorial/SingleMu_Run2012B/SingleMu_Run2012B_193834-194270/DOES_NOT_EXIST.root'
+    FileNotFoundError: [Errno 2] No such file or directory: '/project01/ndcms/btovar/tutorial/tutorial/SingleMu_Run2012B/SingleMu_Run2012B_193834-194270/DOES_NOT_EXIST.root'
     </div>
 
     The run ended with no result, as `datasets 0/5` shows, and
@@ -161,18 +161,21 @@ the run stops right there:
     datasets   [ <span class="t-gray">░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░</span> ]                      <span class="t-green">0</span>/<span class="t-cyan">5</span>
     Traceback (most recent call last):
     ...
-    vine_reduce.pipeline.VineReduceError: processor 'trijet' failed on /project01/ndcms/btovar/store/user/btovar/tutorial/SingleMu_Run2012B/SingleMu_Run2012B_193834-194270/DOES_NOT_EXIST.root[0:50000] after 3 attempts (attempts=3):
+    vine_reduce.pipeline.VineReduceError: processor 'trijet' failed on /project01/ndcms/btovar/tutorial/tutorial/SingleMu_Run2012B/SingleMu_Run2012B_193834-194270/DOES_NOT_EXIST.root[0:50000] after 3 attempts (attempts=3):
     ...
     TypeError: none of the 10 overloaded methods succeeded. Full details:
     ...
-        invalid_argument: RDataFrame: could not open file "/project01/ndcms/btovar/store/user/btovar/tutorial/SingleMu_Run2012B/SingleMu_Run2012B_193834-194270/DOES_NOT_EXIST.root".
+        invalid_argument: RDataFrame: could not open file "/project01/ndcms/btovar/tutorial/tutorial/SingleMu_Run2012B/SingleMu_Run2012B_193834-194270/DOES_NOT_EXIST.root".
     ...
     </div>
 
     The run ended with no result, as `datasets 0/5` shows, and
     `results/SingleMu_Run2012B_193834-194270/trijet/` is empty. The cause is in the exception, although you
     have to read down to it: PyROOT lists every `RDataFrame` constructor it tried,
-    and only then says why the one that fits failed (`could not open file`). The run
+    and only then says why the one that fits failed (`could not open file`). (While
+    it runs, ROOT also prints its own `Error in <TFile::TFile>: file ... does not
+    exist` lines, a couple per failed attempt, mixed in with the console; they
+    say the same thing.) The run
     stopped early, at the first bad chunk given up on, so most of the good chunks
     were never processed (`15` of an estimated `83` here). The task totals on the
     `trijet` and `reductions` bars are estimates, as Module 2 noted, and the bad
@@ -190,7 +193,7 @@ cat failed_files.log
 ```
 [2026-10-21T18:14:24.674855+00:00] permanent failure
   dataset:    SingleMu_Run2012B_193834-194270
-  file:       /project01/ndcms/btovar/store/user/btovar/tutorial/SingleMu_Run2012B/SingleMu_Run2012B_193834-194270/DOES_NOT_EXIST.root
+  file:       /project01/ndcms/btovar/tutorial/tutorial/SingleMu_Run2012B/SingleMu_Run2012B_193834-194270/DOES_NOT_EXIST.root
   events:     [0:50000]
   stage:      processor
   attempts:   3

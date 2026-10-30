@@ -37,7 +37,8 @@ You also need the certificate wrapper, `with_oasis_certs`, in
 **1. The data.** The script reads `data/datasets_xrootd.json` from
 Module 1, the same 15 files and 5 datasets as before, but now by their
 `root://cmsxrootd.crc.nd.edu/...` URLs: pool nodes read them over xrootd,
-whereas `/project01` is only mounted on some of them. The chunks are also
+which works from any node, whether or not it mounts `/project01`. (Every
+node in glados's pool does, but many nodes in other pools don't.) The chunks are also
 larger (`chunksize=100_000`), so that there are fewer, longer tasks:
 
 ```diff
@@ -428,7 +429,8 @@ starts, and goes through the following steps:
 
 - If the node has `/cvmfs/oasis.opensciencegrid.org`, it sets up the grid
   certificates from there.
-- If not (and many pool nodes don't), it writes the few CA certificates
+- If not (every node in glados's pool has it, but many nodes elsewhere
+  don't), it writes the few CA certificates
   it needs, bundled inside the script, into a temporary directory and
   points `X509_CERT_DIR` there.
 - If a `proxy.pem` is in the job's directory, it sets `X509_USER_PROXY`

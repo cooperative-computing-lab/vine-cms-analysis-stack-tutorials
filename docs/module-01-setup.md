@@ -3,8 +3,9 @@
 **15 min**
 
 !!! warning "Do these before the session"
-    Creating the environment and packing it for remote workers each take a
-    few minutes. Thus, do every step on this page *before* the session; in
+    Creating the environment and packing it for remote workers each take
+    up to 15 minutes on glados, where your home directory is on a network
+    file system. Thus, do every step on this page *before* the session; in
     the room, only the checks are run.
 
 ## Pick your analysis implementation
@@ -63,8 +64,7 @@ Environments made by pixi are essentially the same as the ones done with conda.
     ```
 
     Run everything through `pixi run` (e.g. `pixi run python
-    scripts/vr_trijet_iterative.py`), or activating an environment with 
-    pixi shell.
+    scripts/vr_trijet_iterative.py`).
 
 ## Go to the tutorial directory
 
@@ -114,9 +114,9 @@ that the wrong environment is active.
 From [Module 4](module-04-scale-out.md) on, your code runs on HTCondor
 pool nodes that don't have any of this installed. Therefore, VineReduce
 ships a packed copy of your environment along with every task, and
-`get_environment()` builds that tarball. Build it now: it takes a few
+`get_environment()` builds that tarball. Build it now: it takes 5 to 15
 minutes and comes to ~1.5 GB, and later calls reuse the cached copy
-instantly:
+in a few seconds:
 
 === "Option A: conda"
 
@@ -138,7 +138,7 @@ Today's data is real CMS Open Data taken from the `Run2012B_SingleMu`.
 
 You need to be logged in `glados` or any `crc` frontend to see the data.
 
-- `data/datasets_vast.json` points at `/project01/ndcms/btovar/store/user/btovar/tutorial/SingleMu_Run2012B/...`,
+- `data/datasets_vast.json` points at `/project01/ndcms/btovar/tutorial/tutorial/SingleMu_Run2012B/...`,
   on the VAST filesystem that your login node mounts. Modules
   [2](module-02-local-distributor.md), [3](module-03-local-factory.md),
   [6](module-06-checkpoints-restart.md), and
@@ -165,15 +165,15 @@ head -22 data/datasets_vast.json
       "source": "Run2012B_SingleMu, CMS Open Data (IRIS-HEP ADL benchmark input), eospublic.cern.ch; first 3 files of this dataset's split; dataset name is an illustrative run-range label, not derived from these files' actual run numbers"
     },
     "files": {
-      "/project01/ndcms/btovar/store/user/btovar/tutorial/SingleMu_Run2012B/SingleMu_Run2012B_193834-194270/file_0.root": {
+      "/project01/ndcms/btovar/tutorial/tutorial/SingleMu_Run2012B/SingleMu_Run2012B_193834-194270/file_0.root": {
         "object_path": "Events",
         "num_entries": 53733
       },
-      "/project01/ndcms/btovar/store/user/btovar/tutorial/SingleMu_Run2012B/SingleMu_Run2012B_193834-194270/file_1.root": {
+      "/project01/ndcms/btovar/tutorial/tutorial/SingleMu_Run2012B/SingleMu_Run2012B_193834-194270/file_1.root": {
         "object_path": "Events",
         "num_entries": 222177
       },
-      "/project01/ndcms/btovar/store/user/btovar/tutorial/SingleMu_Run2012B/SingleMu_Run2012B_193834-194270/file_2.root": {
+      "/project01/ndcms/btovar/tutorial/tutorial/SingleMu_Run2012B/SingleMu_Run2012B_193834-194270/file_2.root": {
         "object_path": "Events",
         "num_entries": 395172
       }

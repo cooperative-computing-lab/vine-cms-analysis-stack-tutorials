@@ -10,7 +10,7 @@ RDataFrame, and you choose the one you prefer. Wherever the two differ, a
 page shows `coffea` and `RDataFrame` tabs, and a click on one switches every
 other such tab on the site. Everything else, namely VineReduce, TaskVine,
 the factory, and the pool, is shared between them. [Module
-1](module-01-setup.md#pick-your-analysis-flavor) says more.
+1](module-01-setup.md#pick-your-analysis-implementation) says more.
 
 **Format:** Software-Carpentries style, that is, a short framing followed
 by live-coding along, in short build-run-break-fix cycles. This comes to
@@ -74,16 +74,21 @@ By the end, a student can:
     - **Per-student worker cap**, in each student's `factory.json`: at most
       2 workers, 4 cores, 8000 MB memory, and 16000 MB disk each
       (`--single-shot`, `timeout` 300 s, `factory-timeout` 120 s).
-    - **`condor-requirements`**: none for Modules 4, 5, and 8. Module 7 adds
-      `(has_vast)` so that workers can write to `/project01` on the CRC
-      pool. On glados (T3), however, leave it out, since every worker there
-      has VAST.
+    - **`condor-requirements`**: none from glados, in every module: every
+      node in glados's pool mounts `/project01` (and `/cvmfs`), and none
+      advertises `has_vast`, so `(has_vast)` would match no node at all.
+      Module 7 shows `(has_vast)` only for submitting from another CRC front
+      end (e.g. condorfe), whose pool mounts `/project01` on some nodes only.
 
 !!! danger "TODO before the session"
     Confirm that the `<netid>-trijet-tutorial` naming convention does not
     collide with other CCL or production use of the same catalog, and get a
     headcount to check that 2 workers per student is sane for the pool
-    under class load.
+    under class load. On 2026-10-21 glados's pool (collector
+    `deepthought.crc.nd.edu`) had 46 machines, nearly all busy: a
+    4-core/8000 MB job sometimes started in seconds and sometimes sat idle
+    for over 10 minutes (`condor_q -better-analyze`: "44 slots would match
+    if drained").
 
 ## Dataset plan: real data, two manifests
 
@@ -103,7 +108,7 @@ which manifest a script loads. The RDataFrame scripts read the very same
 files.
 
 1. **`data/datasets_vast.json`**: the files on VAST,
-   `/project01/ndcms/btovar/store/user/btovar/tutorial/SingleMu_Run2012B/<dataset>/file_<i>.root`
+   `/project01/ndcms/btovar/tutorial/tutorial/SingleMu_Run2012B/<dataset>/file_<i>.root`
    (absolute paths, world-readable). The local Modules
    [2](module-02-local-distributor.md), [3](module-03-local-factory.md),
    [6](module-06-checkpoints-restart.md), and

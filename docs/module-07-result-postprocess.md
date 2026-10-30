@@ -185,29 +185,34 @@ file.
 
 ## Workers that can see `/project01`
 
-Not every node in today's pool mounts `/project01`. Therefore, add a condor
-requirement to your factory configuration so that your workers only land on
-nodes that do:
+The workers write straight into `/project01`, so they have to run on nodes
+that mount it. From glados that needs nothing new: every node in its pool
+mounts `/project01`, so Module 4's `factory.json` works as it is.
 
-```bash
-cat > factory.json <<EOF
-{
-  "manager-name": "$USER-trijet-tutorial",
-  "min-workers": 0,
-  "max-workers": 2,
-  "cores": 4,
-  "memory": 8000,
-  "disk": 16000,
-  "timeout": 300,
-  "factory-timeout": 120,
-  "condor-requirements": "(has_vast)"
-}
-EOF
-```
+!!! note "Submitting from another CRC front end"
+    Not every node in the main CRC pool (e.g. when submitting from
+    `condorfe.crc.nd.edu`) mounts `/project01`. There, add a condor
+    requirement to `factory.json` so that your workers only land on nodes
+    that do:
 
-!!! note "On glados (T3)"
-    Remove the `condor-requirements` line when running from glados, as all
-    workers there have VAST (`/project01`) mounted already.
+    ```bash
+    cat > factory.json <<EOF
+    {
+      "manager-name": "$USER-trijet-tutorial",
+      "min-workers": 0,
+      "max-workers": 2,
+      "cores": 4,
+      "memory": 8000,
+      "disk": 16000,
+      "timeout": 300,
+      "factory-timeout": 120,
+      "condor-requirements": "(has_vast)"
+    }
+    EOF
+    ```
+
+    Don't use this file from glados: no node in glados's pool advertises
+    `has_vast`, so your workers would never start.
 
 ## Run it
 
@@ -243,22 +248,52 @@ EOF
         pixi run python scripts/vr_trijet_skim_rdf.py
         ```
 
-**Terminal 2**, the factory with the new `factory.json`:
+**Terminal 2**, the factory:
 
-=== "Option A: conda"
+=== "coffea"
 
-    ```bash
-    conda activate vine-cms-analysis-stack
-    vine_factory -T condor -C factory.json -E '--single-shot' \
-      --wrapper ./with_oasis_certs --wrapper-input with_oasis_certs
-    ```
+    As in Module 4:
 
-=== "Option B: pixi"
+    === "Option A: conda"
 
-    ```bash
-    pixi run vine_factory -T condor -C factory.json -E '--single-shot' \
-      --wrapper ./with_oasis_certs --wrapper-input with_oasis_certs
-    ```
+        ```bash
+        conda activate vine-cms-analysis-stack
+        vine_factory -T condor -C factory.json -E '--single-shot' \
+          --wrapper ./with_oasis_certs --wrapper-input with_oasis_certs
+        ```
+
+    === "Option B: pixi"
+
+        ```bash
+        pixi run vine_factory -T condor -C factory.json -E '--single-shot' \
+          --wrapper ./with_oasis_certs --wrapper-input with_oasis_certs
+        ```
+
+=== "RDataFrame"
+
+    As in Module 4, but with `CPATH=/usr/include` in front:
+
+    === "Option A: conda"
+
+        ```bash
+        conda activate vine-cms-analysis-stack
+        CPATH=/usr/include vine_factory -T condor -C factory.json -E '--single-shot' \
+          --wrapper ./with_oasis_certs --wrapper-input with_oasis_certs
+        ```
+
+    === "Option B: pixi"
+
+        ```bash
+        CPATH=/usr/include pixi run vine_factory -T condor -C factory.json -E '--single-shot' \
+          --wrapper ./with_oasis_certs --wrapper-input with_oasis_certs
+        ```
+
+    The skim converts each chunk with `ak.from_rdataframe`, which has ROOT
+    compile a C++ header on the worker. On glados's pool nodes, ROOT does not
+    find the C system headers that come with your packed environment, and every
+    skim task fails with `fatal error: 'assert.h' file not found`. `CPATH`
+    points ROOT at the node's own headers instead. The factory hands its
+    environment to the worker jobs it submits, so setting it here is enough.
 
 This time there are 83 chunks of up to 50,000 events, five datasets in all.
 
@@ -488,4 +523,4 @@ This time there are 83 chunks of up to 50,000 events, five datasets in all.
     attempts: `rm /project01/ndcms/users/$USER/trijet-skims/*.parquet`.
 
 When you're done, stop the factory with Ctrl-C and check `condor_q`, as
-in [Module 4](module-04-scale-out.md#clean-up-after-yourself).
+in [Module 4](module-04-scale-out.md#clean-up).

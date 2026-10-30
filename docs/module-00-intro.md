@@ -24,7 +24,7 @@ EFT search, runs on this exact stack in production (see
 only with regards to its size, not its structure.
 
 The same analysis is written two ways in this tutorial, and you pick one in
-[Module 1](module-01-setup.md#pick-your-analysis-flavor):
+[Module 1](module-01-setup.md#pick-your-analysis-implementation):
 
 - **coffea**: the processor is a Python function over awkward arrays. The
   trijet is built from array operations (`ak.combinations`, `ak.argmin`, and

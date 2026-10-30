@@ -164,12 +164,11 @@ Use the same two terminals as in [Module 4](module-04-scale-out.md).
       --wrapper ./with_oasis_certs --wrapper-input with_oasis_certs
     ```
 
-!!! note "Still have Module 7's `factory.json`?"
-    If you did [Module 7](module-07-result-postprocess.md), your
-    `factory.json` still has its `condor-requirements` line. It is harmless
-    here — it only narrows which nodes your 2 workers land on. Delete the
-    line to use the whole pool, since nothing in this module writes to
-    `/project01`.
+!!! note "Added a `condor-requirements` line in Module 7?"
+    If you submitted from a front end other than glados and added Module 7's
+    `condor-requirements` line to `factory.json`, it is harmless here: it
+    only narrows which nodes your 2 workers land on. Delete the line to use
+    the whole pool, since nothing in this module writes to `/project01`.
 
 === "coffea"
 

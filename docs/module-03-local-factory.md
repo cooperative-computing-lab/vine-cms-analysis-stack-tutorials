@@ -322,8 +322,9 @@ perf.tasks-capacities.svg  perf.time-manager.svg  perf.times-stacked.svg perf.tr
 taskgraph.pdf
 ```
 
-(`vine_plot_taskgraph` also leaves a `taskgraph.dot` in the current directory,
-which is the graphviz source for the PDF.) `-u s` puts time in seconds, and
+(`vine_plot_taskgraph` also leaves a `taskgraph.dot` next to the log, in
+`vine-run-info/most-recent/vine-logs/`, which is the graphviz source for the
+PDF.) `-u s` puts time in seconds, and
 `-s 5` samples the log every 5 seconds rather than the default 30, because
 this run was short.
 
