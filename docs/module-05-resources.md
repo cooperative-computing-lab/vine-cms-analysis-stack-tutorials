@@ -457,3 +457,13 @@ partial results are large, and `reduction_size` together with
 `resources_reducer` is what keeps a merge from running out of memory. Such
 a case is where this knob becomes important, even though here it
 barely seems to matter.
+
+## Stop the factory
+
+This is the last run on the pool until [Module 7](module-07-result-postprocess.md),
+so clean up as at the end of [Module 4](module-04-scale-out.md#clean-up):
+stop the factory in terminal 2 with **Ctrl-C**, then check with `condor_q`
+that none of your worker jobs are left, and `condor_rm` any that are.
+Don't skip this: the next module's manager has the same name, so a factory
+that is still running would send pool workers to it (see
+[Module 6](module-06-checkpoints-restart.md)).

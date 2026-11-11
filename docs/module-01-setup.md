@@ -83,8 +83,9 @@ data  README.md  scripts
 
 `scripts/` has one script per module, and `data/` has the dataset manifests
 described [below](#data-descriptions). Everything else you create today
-(`results/`, `checkpoints/`, `vine-run-info/`, `factory.json`, `plots/`)
-appears next to them. These are ignored by git.
+(`vine_reduce-envs/` from the packing step below, `results/`, `checkpoints/`,
+`vine-run-info/`, `factory.json`, `plots/`) appears next to them. None of it
+is part of the repository.
 
 ## Verify
 

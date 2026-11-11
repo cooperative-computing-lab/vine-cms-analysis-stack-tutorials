@@ -337,7 +337,7 @@ grep -E 'worker .* connected|completed ssl' vine-run-info/most-recent/vine-logs/
 2026/09/14 15:09:53.92 vine_manager[174896]vine: worker 10.32.91.175:55916 completed ssl connection
 ```
 
-Note that these timestamps are in UTC. A few lines further down, the log
+Note that these timestamps are in the login node's local time. A few lines further down, the log
 also names the node:
 `rx from d32cepyc204.crc.nd.edu (10.32.91.175:55916)`.
 
@@ -379,7 +379,8 @@ also names the node:
 
 === "RDataFrame"
 
-    Back in terminal 1, the run took about two minutes, and ended like this:
+    Back in terminal 1, once the workers were up, the run took about four
+    minutes on the glados pool, and ended like this:
 
     <div class="term">
     <span class="t-green">success             </span> processor trijet/SingleMu_Run2012B_193834-194270 ...4-194270/file_0.root[0:53733] (id=2ebe4cac) cores=1(1) memory_mb=865(2016) wall_time_s=4(0)
@@ -405,13 +406,15 @@ also names the node:
     ND xrootd server by workers in the pool, followed by one final reduction per
     dataset (and one extra reduction in each dataset with more than 10 chunks).
     The allocation in parentheses is `2016` MB because, as in Module 3, a 1-core
-    task gets its core's share of the worker's memory. Each chunk used 865-976
-    MB of it, about 750 MB of which is ROOT compiling `BestTrijet`, and took 4
-    to 8 seconds, as opposed to coffea's 1: every task compiles the C++ first.
+    task gets its core's share of the worker's memory. Each chunk used about
+    800-980 MB of it, about 750 MB of which is ROOT compiling `BestTrijet`, and
+    took 7 to 15 seconds on the pool (4 to 8 in the capture above), as opposed
+    to coffea's 1 or 2: every task compiles the C++ first, then reads its chunk
+    over xrootd.
     The limit is still not close to binding; [Module 5](module-05-resources.md)
     looks at what does bind it with RDataFrame.
 
-*The output of this section was captured with a local worker of the same size as the pool's (4 cores, 8064 MB), rather than on the pool itself, so your timings will differ.*
+*The RDataFrame output of this section was captured with a local worker of the same size as the pool's (4 cores, 8064 MB), rather than on the pool itself, so its timings are shorter than yours will be; the counts and entries are the same.*
 
 This is perhaps the part worth pausing on. Your processor code didn't
 change between Module 2's run over `/project01` on the login node and this

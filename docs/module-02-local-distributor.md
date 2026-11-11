@@ -40,12 +40,14 @@ What you see first depends on the flavor:
 
 === "coffea"
 
-    You will first see some warnings, such as `RuntimeWarning: Missing
-    cross-reference index for ...` and a `DeprecationWarning` from inside
-    `awkward`, all of which are harmless. `NanoAODSchema` expects every
+    You will first see some warnings, `RuntimeWarning: Missing
+    cross-reference index for ...` and `RuntimeWarning: Branch Photon_charge
+    already exists but its values will be replaced with 0.0` (and the same for
+    `Photon_mass`), all of which are harmless. `NanoAODSchema` expects every
     cross-reference branch that a real NanoAOD file carries (electrons pointing
     back at jets, and so on); however, this 2012 open-data file predates some of them, thus the schema
-    warns about the missing ones and moves on.
+    warns about the missing ones and moves on. The `Photon` warnings are the
+    schema setting two photon fields that this analysis never reads.
 
 === "RDataFrame"
 

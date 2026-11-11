@@ -119,17 +119,17 @@ the run stops right there:
 
 === "coffea"
 
-    This takes about 10 seconds:
+    This takes about 5 seconds:
 
     <div class="term">
     failure_proportion=0.0, 5 datasets of 4 files, 1 file in each of them missing
     ...
     <span class="t-red">failure             </span> processor trijet/SingleMu_Run2012B_193834-194270 .../DOES_NOT_EXIST.root[0:50000] ...
     ...
-    trijet     [ <span class="t-green">█████</span><span class="t-gray">░░░░░░░░░░░░░░░░░░░░░░░░░</span> ]                 <span class="t-yellow">15</span>/<span class="t-red">1</span>/<span class="t-blue">88</span>
-    reductions [ <span class="t-green">███</span><span class="t-gray">░░░░░░░░░░░░░░░░░░░░░░░░░░░</span> ]                   <span class="t-yellow">1</span>/<span class="t-red">0</span>/<span class="t-blue">9</span>
-    events     [ <span class="t-green">█████</span><span class="t-gray">░░░░░░░░░░░░░░░░░░░░░░░░░</span> ] <span class="t-yellow">671082</span>(<span class="t-green">0</span>)/<span class="t-red">50000</span>/<span class="t-blue">4236416</span>
-    datasets   [ <span class="t-gray">░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░</span> ]                     <span class="t-green">0</span>/<span class="t-cyan">5</span>
+    trijet     [ <span class="t-green">████</span><span class="t-gray">░░░░░░░░░░░░░░░░░░░░░░░░░░</span> ]             <span class="t-yellow">14</span>/<span class="t-red">0</span>/<span class="t-blue">94</span>
+    reductions [ <span class="t-green">███</span><span class="t-gray">░░░░░░░░░░░░░░░░░░░░░░░░░░░</span> ]              <span class="t-yellow">1</span>/<span class="t-red">0</span>/<span class="t-blue">10</span>
+    events     [ <span class="t-green">████</span><span class="t-gray">░░░░░░░░░░░░░░░░░░░░░░░░░░</span> ] <span class="t-yellow">625910</span>(<span class="t-green">0</span>)/<span class="t-red">0</span>/<span class="t-blue">4236416</span>
+    datasets   [ <span class="t-gray">░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░</span> ]                 <span class="t-green">0</span>/<span class="t-cyan">5</span>
     Traceback (most recent call last):
     ...
     vine_reduce.pipeline.VineReduceError: processor 'trijet' failed on /project01/ndcms/btovar/tutorial/tutorial/SingleMu_Run2012B/SingleMu_Run2012B_193834-194270/DOES_NOT_EXIST.root[0:50000] after 3 attempts (attempts=3):
@@ -139,12 +139,15 @@ the run stops right there:
 
     The run ended with no result, as `datasets 0/5` shows, and
     `results/SingleMu_Run2012B_193834-194270/trijet/` is empty. It stopped early, at the first bad
-    chunk given up on, so most of the good chunks were never processed (`15` of
-    an estimated `88` here). The task totals on the `trijet` and `reductions` bars are
+    chunk given up on, so most of the good chunks were never processed (`14` of
+    an estimated `94` here). The task totals on the `trijet` and `reductions` bars are
     estimates, as Module 2 noted, and the bad files' chunks throw them off. The
     **events** row's total is exact: `4236416` counts the 15 real files plus the
     five bad entries' claimed 100,000 events each. This is a bit harsh for one
     missing file out of 20, but it is also the behavior you want by default.
+    The red counts on the bars read 0, although the red `failure` lines above
+    them show the failed attempts: the bars were last drawn before those
+    attempts were counted, and the run stopped before drawing them again.
 
 === "RDataFrame"
 
@@ -155,10 +158,10 @@ the run stops right there:
     ...
     <span class="t-red">failure             </span> processor trijet/SingleMu_Run2012B_193834-194270 .../DOES_NOT_EXIST.root[0:50000] ...
     ...
-    trijet     [ <span class="t-green">█████</span><span class="t-red">█</span><span class="t-gray">░░░░░░░░░░░░░░░░░░░░░░░░</span> ]                  <span class="t-yellow">15</span>/<span class="t-red">2</span>/<span class="t-blue">83</span>
-    reductions [ <span class="t-green">███</span><span class="t-gray">░░░░░░░░░░░░░░░░░░░░░░░░░░░</span> ]                    <span class="t-yellow">1</span>/<span class="t-red">0</span>/<span class="t-blue">9</span>
-    events     [ <span class="t-green">█████</span><span class="t-red">█</span><span class="t-gray">░░░░░░░░░░░░░░░░░░░░░░░░</span> ] <span class="t-yellow">671082</span>(<span class="t-green">0</span>)/<span class="t-red">100000</span>/<span class="t-blue">4236416</span>
-    datasets   [ <span class="t-gray">░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░</span> ]                      <span class="t-green">0</span>/<span class="t-cyan">5</span>
+    trijet     [ <span class="t-green">████</span><span class="t-gray">░░░░░░░░░░░░░░░░░░░░░░░░░░</span> ]             <span class="t-yellow">13</span>/<span class="t-red">0</span>/<span class="t-blue">95</span>
+    reductions [ <span class="t-green">███</span><span class="t-gray">░░░░░░░░░░░░░░░░░░░░░░░░░░░</span> ]              <span class="t-yellow">1</span>/<span class="t-red">0</span>/<span class="t-blue">10</span>
+    events     [ <span class="t-green">████</span><span class="t-gray">░░░░░░░░░░░░░░░░░░░░░░░░░░</span> ] <span class="t-yellow">575910</span>(<span class="t-green">0</span>)/<span class="t-red">0</span>/<span class="t-blue">4236416</span>
+    datasets   [ <span class="t-gray">░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░</span> ]                 <span class="t-green">0</span>/<span class="t-cyan">5</span>
     Traceback (most recent call last):
     ...
     vine_reduce.pipeline.VineReduceError: processor 'trijet' failed on /project01/ndcms/btovar/tutorial/tutorial/SingleMu_Run2012B/SingleMu_Run2012B_193834-194270/DOES_NOT_EXIST.root[0:50000] after 3 attempts (attempts=3):
@@ -177,12 +180,15 @@ the run stops right there:
     exist` lines, a couple per failed attempt, mixed in with the console; they
     say the same thing.) The run
     stopped early, at the first bad chunk given up on, so most of the good chunks
-    were never processed (`15` of an estimated `83` here). The task totals on the
+    were never processed (`13` of an estimated `95` here). The task totals on the
     `trijet` and `reductions` bars are estimates, as Module 2 noted, and the bad
     files' chunks throw them off. The **events** row's total is exact: `4236416`
     counts the 15 real files plus the five bad entries' claimed 100,000 events
     each. This is a bit harsh for one missing file out of 20, but it is also the
     behavior you want by default.
+    The red counts on the bars read 0, although the red `failure` lines above
+    them show the failed attempts: the bars were last drawn before those
+    attempts were counted, and the run stopped before drawing them again.
 
 ## Logs
 

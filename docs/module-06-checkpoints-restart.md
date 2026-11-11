@@ -10,6 +10,16 @@ over.
 This module runs on the login node, reading from `/project01`, so no pool
 is needed.
 
+!!! warning "Stop your factory first"
+    If the `vine_factory` from Modules 4 and 5 is still running in terminal 2,
+    stop it now with **Ctrl-C**. This module's manager has the same name,
+    `<netid>-trijet-tutorial`, so the factory finds it in the catalog and
+    sends it pool workers. Those workers don't have this module's
+    environment (it ships none, since it expects only the local worker), so
+    every task they get fails with `ModuleNotFoundError: No module named
+    'vine_reduce'`, and the run stops with `VineReduceError` after 3
+    attempts at one chunk.
+
 ## What changed in the script
 
 This module's script (`scripts/vr_trijet_checkpoint.py`,
@@ -190,8 +200,7 @@ ls results checkpoints
 
     ```
     checkpoints:
-    13fa9c70e76c414db0742c15e4d87896.p
-    7510956ae1ef4a97b6581becda314508.p
+    c3b22d1e1f4e49ceb0962adcc60fdab9.p
 
     results:
     SingleMu_Run2012B_193834-194270
@@ -203,10 +212,9 @@ ls results checkpoints
     vine_reduce.db
     ```
 
-    There are two checkpoint files. Further, `results/vine_reduce.db` is a
+    There is one checkpoint file. Further, `results/vine_reduce.db` is a
     small SQLite database recording what each checkpoint and each final result
-    covers; only one of the two files is referenced by an intermediate row (the
-    other is a stale leftover):
+    covers:
 
 === "RDataFrame"
 
@@ -364,7 +372,6 @@ ls results checkpoints results/SingleMu_Run2012B_193834-194270/trijet
 
     ```
     checkpoints:
-    13fa9c70e76c414db0742c15e4d87896.p
 
     results:
     SingleMu_Run2012B_193834-194270
@@ -379,8 +386,8 @@ ls results checkpoints results/SingleMu_Run2012B_193834-194270/trijet
     trijet__f10de99a8f7944c0b3a21cce18a48910.pkl.zst
     ```
 
-    The stale checkpoint file from before is still in `checkpoints/`; it does
-    not affect the result.
+    `checkpoints/` is now empty, because once the final result exists, the
+    intermediate checkpoints it replaced are deleted.
 
 === "RDataFrame"
 
