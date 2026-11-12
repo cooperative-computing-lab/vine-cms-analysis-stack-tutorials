@@ -234,7 +234,7 @@ datasets_path = os.path.join(REPO_ROOT, "data", "datasets_vast.json")
     default one already does the right thing. Two results are folded together by
     `a[key] += b[key]` for every key, and `hist.Hist` objects already know how to
     add. Thus, a dict of two Hists goes in, and a dict of two Hists (covering more
-    events) comes out. [Module 7](module-07-result-postprocess.md) is where a
+    events) comes out. [Module 8](module-08-result-postprocess.md) is where a
     processor's output stops being "a Hist or a dict of Hists" and a custom
     reducer becomes necessary.
 
@@ -298,7 +298,7 @@ datasets_path = os.path.join(REPO_ROOT, "data", "datasets_vast.json")
     and the script passes it as `reducer=`. Two results are folded together by
     `a[key] += b[key]` for every key, and `hist.Hist` objects already know how to
     add. Thus, a dict of two Hists goes in, and a dict of two Hists (covering more
-    events) comes out. [Module 7](module-07-result-postprocess.md) is where a
+    events) comes out. [Module 8](module-08-result-postprocess.md) is where a
     processor's output stops being "a Hist or a dict of Hists" and a custom
     reducer becomes necessary.
 

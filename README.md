@@ -38,8 +38,8 @@ take up to 15 minutes each.
 | 1:45 | 5 | [Resources & chunk/reduction size](docs/module-05-resources.md) | 15 |
 | 2:00 | 6 | [Checkpoints & restart](docs/module-06-checkpoints-restart.md) | 20 |
 | 2:20 | | *Break* | 10 |
-| 2:30 | 7 | [Shipping results out: `result_postprocess`](docs/module-07-result-postprocess.md) | 15 |
-| 2:45 | 8 | [Multiple processors](docs/module-08-multiple-processors.md) | 10 |
+| 2:30 | 7 | [Multiple processors](docs/module-07-multiple-processors.md) | 10 |
+| 2:40 | 8 | [Shipping results out: `result_postprocess`](docs/module-08-result-postprocess.md) | 15 |
 | 2:55 | 9 | [Wrap-up / where to get help](docs/module-09-wrapup.md) | 5 |
 | | | **Total** | **180** |
 

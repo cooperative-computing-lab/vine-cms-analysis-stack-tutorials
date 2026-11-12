@@ -1,8 +1,8 @@
-# Module 7 - Shipping results out: `result_postprocess`
+# Module 8 - Shipping results out: `result_postprocess`
 
 **15 min**
 
-So far every result was a pair of histograms, which stays at a few
+So far every result was a set of histograms, which stays at a few
 kilobytes whatever the input size. A **skim** is a bit different, as it
 keeps the selected events themselves, and thus it grows with the data.
 Passing gigabytes of events back through your manager process, just to

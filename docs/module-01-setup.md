@@ -149,8 +149,8 @@ You need to be logged in `glados` or any `crc` frontend to see the data.
   `root://cmsxrootd.crc.nd.edu//store/user/btovar/tutorial/SingleMu_Run2012B/...`,
   the same files over xrootd, with no grid proxy needed. Modules
   [4](module-04-scale-out.md), [5](module-05-resources.md),
-  [7](module-07-result-postprocess.md), and
-  [8](module-08-multiple-processors.md) run on HTCondor pool nodes, and read
+  [7](module-07-multiple-processors.md), and
+  [8](module-08-result-postprocess.md) run on HTCondor pool nodes, and read
   these.
 
 Look at the first dataset:

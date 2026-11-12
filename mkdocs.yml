@@ -59,8 +59,8 @@ nav:
   - "4. Scale out": module-04-scale-out.md
   - "5. Resources & chunk/reduction size": module-05-resources.md
   - "6. Checkpoints & restart": module-06-checkpoints-restart.md
-  - "7. result_postprocess": module-07-result-postprocess.md
-  - "8. Multiple processors": module-08-multiple-processors.md
+  - "7. Multiple processors": module-07-multiple-processors.md
+  - "8. result_postprocess": module-08-result-postprocess.md
   - "9. Wrap-up": module-09-wrapup.md
   - "10. failure_proportion (extra)": module-10-failure-proportion.md
   - Appendix: appendix.md

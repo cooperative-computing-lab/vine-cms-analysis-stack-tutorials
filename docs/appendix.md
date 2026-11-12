@@ -40,9 +40,9 @@ datasets, 289,270 / 497,298 / 276,498 / 247,576 / 387,297 for each) and in
 Module 5 (206,251). The histograms agree bin for bin apart from a few dozen
 events: roughly 45 of the 1.7 million events land one bin over in the trijet pT
 histograms, and roughly 22 in the b-tag ones. Where a selection has a hard edge, the
-flavors can differ by an event or two: the mass windows of Module 8 (578,860
+flavors can differ by an event or two: the mass windows of Module 7 (578,860
 with coffea against 578,859 with RDataFrame for ±10 GeV) and the skim of
-Module 7 (776,186 events against 776,189). That is the size of difference to
+Module 8 (776,186 events against 776,189). That is the size of difference to
 expect from two implementations that round differently. Beyond that, they
 differ in these ways:
 
@@ -72,7 +72,7 @@ differ in these ways:
   `hist.Hist` (`to_hist`) before returning it, which also makes results
   files, `load_result`, and the reducer identical for the two flavors.
 - **Skims.** An RDataFrame skim goes through `ak.from_rdataframe`, so
-  [Module 7](module-07-result-postprocess.md)'s reducer and
+  [Module 8](module-08-result-postprocess.md)'s reducer and
   `result_postprocess` are the same for both flavors.
 - **Dataset files.** The RDataFrame scripts read the same
   `datasets_*.json` files, through `coffea_input_to_datasets`, which is why
@@ -117,8 +117,8 @@ files.
 2. **`data/datasets_xrootd.json`**: the same files as
    `root://cmsxrootd.crc.nd.edu//store/user/btovar/tutorial/SingleMu_Run2012B/<dataset>/file_<i>.root`,
    with no grid proxy needed. Modules [4](module-04-scale-out.md),
-   [5](module-05-resources.md), [7](module-07-result-postprocess.md), and
-   [8](module-08-multiple-processors.md) run on HTCondor pool nodes and read
+   [5](module-05-resources.md), [7](module-07-multiple-processors.md), and
+   [8](module-08-result-postprocess.md) run on HTCondor pool nodes and read
    these; Module 5 uses just one of the 15 files.
 
 The five dataset names (`SingleMu_Run2012B_193834-194270`, ...) are styled

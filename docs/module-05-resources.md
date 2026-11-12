@@ -188,11 +188,9 @@ reminder that the two limits need not look alike.
     1. `[0:430713]`, the whole file, is killed at 1,428 MB, over its 700 MB limit,
        one second in. That is a `resource_exhaustion`, and thus the `trijet` bar's
        red count goes up.
-    2. VineReduce **halves the chunksize** and cuts the file again, into
-       `[0:215356]`, `[215356:430712]`, and a one-event `[430712:430713]` left over
-       by the odd total.
+    2. VineReduce **halves the chunksize** and tries again.
     3. The halves still need more than 700 MB (825 and 921 MB when killed), so
-       both are killed and halved again, into pieces of 107,678 events.
+       both are killed and halved again.
     4. Those pieces need about 600-800 MB, and they were allocated 1,245 MB
        rather than 700 (`memory_mb=616(1245)`), so they fit. They finish, one
        final reduction folds the 5 partial results, and the answer is the same
@@ -204,7 +202,7 @@ reminder that the two limits need not look alike.
     thrown by the `5/3/2` on the `trijet` bar either: as Module 2 noted, the
     task totals are estimates, and halving chunks mid-run throws them off.)
 
-    The rules behind this are fairly simple. On `resource_exhaustion`,
+    To remember: on `resource_exhaustion`,
     `chunksize` is halved, and the halved size applies to chunks not yet cut.
     Halving stops at `minimum_chunksize` (default 1000), and a chunk that is
     still too big at that size is given up on. Further, a chunk gets `attempts`
@@ -269,10 +267,8 @@ reminder that the two limits need not look alike.
        one second in. That is ROOT starting up and compiling `BestTrijet`, before
        the events were read, and a `resource_exhaustion`; the `trijet` bar's red
        count goes up.
-    2. VineReduce **halved the chunksize** and cut the file again, into
-       `[0:215356]`, `[215356:430712]` and a one-event `[430712:430713]` left over by
-       the odd total. Each of them, even the one-event chunk, was killed at about
-       the same 820 MB, and so were their halves, and theirs.
+    2. VineReduce **halved the chunksize** and cut the file again. Each cut
+       was killed at about the same 820 MB, and so were their halves, and theirs.
     3. Halving stopped at `minimum_chunksize` (1000 events). A chunk that is still
        too big at that size is given up on, and since a whole dataset of yours
        could not be processed, the run stopped with `VineReduceError`.
@@ -444,7 +440,7 @@ marks the reduction VineReduce *forces* at the end of a dataset, to fold
 whatever partial results remain; `result` marks a reduction that
 qualified as a final result *on its own* — here, the last pairwise fold
 happened to cover every event by itself, so nothing had to be forced.
-Both carry the `(final)` tag. [Module 7](module-07-result-postprocess.md)
+Both carry the `(final)` tag. [Module 8](module-08-result-postprocess.md)
 makes this distinction do real work, with several `result` reductions per
 run.
 
@@ -452,7 +448,7 @@ A larger `reduction_size` means fewer, bigger reducer calls, each holding
 more partial results in memory at once. A smaller one, on the other hand,
 means more, smaller calls, and thus more tasks to schedule. For histograms
 like the ones here, every partial result is tiny, so the default of 10 is
-fine. For skims ([Module 7](module-07-result-postprocess.md)), however,
+fine. For skims ([Module 8](module-08-result-postprocess.md)), however,
 partial results are large, and `reduction_size` together with
 `resources_reducer` is what keeps a merge from running out of memory. Such
 a case is where this knob becomes important, even though here it
@@ -460,7 +456,7 @@ barely seems to matter.
 
 ## Stop the factory
 
-This is the last run on the pool until [Module 7](module-07-result-postprocess.md),
+This is the last run on the pool until [Module 7](module-07-multiple-processors.md),
 so clean up as at the end of [Module 4](module-04-scale-out.md#clean-up):
 stop the factory in terminal 2 with **Ctrl-C**, then check with `condor_q`
 that none of your worker jobs are left, and `condor_rm` any that are.

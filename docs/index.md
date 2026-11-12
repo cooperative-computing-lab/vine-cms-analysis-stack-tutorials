@@ -1,5 +1,8 @@
 # TaskVine / VineReduce / vine-cms-analysis-stack
 
+Tutorial repository:
+<https://github.com/cooperative-computing-lab/vine-cms-analysis-stack-tutorials>
+
 A 3-hour hands-on tutorial for HEP graduate students. You take one real CMS
 analysis from a single process on a login node, to a TaskVine worker on the
 same machine, to an HTCondor pool, while the processor code stays the same
@@ -49,9 +52,9 @@ By the end, you can:
 5. Tune (and autotune) chunk/reduction size and resource declarations, and
    explain what changes when they're wrong.
 6. Explain checkpointing and demonstrate restart-without-redoing-work.
-7. Write a `result_postprocess` that ships large results out of band
+7. Run several processors over the same datasets in one job.
+8. Write a `result_postprocess` that ships large results out of band
    rather than pickling them through the manager.
-8. Run several processors over the same datasets in one job.
 9. Know where to ask for help afterward.
 10. Explain and demonstrate `failure_proportion` (extra material).
 
@@ -78,8 +81,8 @@ shows the two manifests, and the
 | 1:45 | 5 | [Resources & chunk/reduction size](module-05-resources.md) | 15 |
 | 2:00 | 6 | [Checkpoints & restart](module-06-checkpoints-restart.md) | 20 |
 | 2:20 | | *Break* | 10 |
-| 2:30 | 7 | [Shipping results out: `result_postprocess`](module-07-result-postprocess.md) | 15 |
-| 2:45 | 8 | [Multiple processors](module-08-multiple-processors.md) | 10 |
+| 2:30 | 7 | [Multiple processors](module-07-multiple-processors.md) | 10 |
+| 2:40 | 8 | [Shipping results out: `result_postprocess`](module-08-result-postprocess.md) | 15 |
 | 2:55 | 9 | [Wrap-up / where to get help](module-09-wrapup.md) | 5 |
 | | | **Total** | **180** |
 

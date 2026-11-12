@@ -1,4 +1,4 @@
-# Module 8 - Multiple processors
+# Module 7 - Multiple processors
 
 **10 min**
 
@@ -164,12 +164,6 @@ Use the same two terminals as in [Module 4](module-04-scale-out.md).
       --wrapper ./with_oasis_certs --wrapper-input with_oasis_certs --wrapper-input proxy.pem
     ```
 
-!!! note "Added a `condor-requirements` line in Module 7?"
-    If you submitted from a front end other than glados and added Module 7's
-    `condor-requirements` line to `factory.json`, it is harmless here: it
-    only narrows which nodes your 2 workers land on. Delete the line to use
-    the whole pool, since nothing in this module writes to `/project01`.
-
 === "coffea"
 
     Once the workers arrived, this run took about a minute:
@@ -248,3 +242,6 @@ by floating-point rounding, which the two implementations do differently.)
     Another window is one more entry in `MASS_WINDOWS` (for example,
     `"trijet_pm5": 5`), with no other change to the script: you would get a
     fourth set of bars and a fourth line at the end.
+
+When you're done, stop the factory with Ctrl-C and check `condor_q`, as
+in [Module 4](module-04-scale-out.md#clean-up).
