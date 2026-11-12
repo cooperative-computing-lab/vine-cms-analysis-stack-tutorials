@@ -337,7 +337,21 @@ scp '<netid>@glados.crc.nd.edu:vine-cms-analysis-stack/examples/tutorial_nd/plot
 
 Open `perf.tasks-accum.png`, which shows tasks submitted
 vs. completed over time for all 94 of them (83 processor calls plus 11
-reductions). Then open `taskgraph.pdf`, which shows processor tasks feeding
+reductions). For the same run as instantaneous counts, open `perf.tasks.png`,
+which shows how many tasks were waiting, on the worker, running, and with
+results at each moment. The waiting queue jumps to about 80 as soon as
+`vine_reduce` submits the processor calls, then drains steadily, while the
+running count stays at 2, one task per worker core:
+
+![Instantaneous task counts over time for the Module 3 run](images/module-03/perf.tasks.png)
+
+`perf.workers.png` shows how many workers were connected, idle, and busy. The
+one worker connects within seconds, stays busy for the whole run, and goes
+idle only at the very end, just before it exits:
+
+![Instantaneous worker counts over time for the Module 3 run](images/module-03/perf.workers.png)
+
+Then open `taskgraph.pdf`, which shows processor tasks feeding
 reductions, and reductions feeding the final one. This is a reduction tree
 that `vine_reduce` built as results arrived, as opposed to one planned up
 front.
