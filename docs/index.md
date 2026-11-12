@@ -52,8 +52,8 @@ By the end, you can:
 7. Write a `result_postprocess` that ships large results out of band
    rather than pickling them through the manager.
 8. Run several processors over the same datasets in one job.
-9. Explain and demonstrate `failure_proportion`.
-10. Know where to ask for help afterward.
+9. Know where to ask for help afterward.
+10. Explain and demonstrate `failure_proportion` (extra material).
 
 ## The data
 
@@ -67,21 +67,28 @@ shows the two manifests, and the
 
 ## Schedule
 
+| Start | # | Module | Minutes |
+|---|---|---|---|
+| 0:00 | 0 | [Intro / motivation (lecture)](module-00-intro.md) | 15 |
+| 0:15 | 1 | [Setup & verify](module-01-setup.md) | 15 |
+| 0:30 | 2 | [Local distributor: map/reduce concepts](module-02-local-distributor.md) | 15 |
+| 0:45 | 3 | [Local TaskVine factory](module-03-local-factory.md) | 20 |
+| 1:05 | | *Break* | 10 |
+| 1:15 | 4 | [Scale out: packaging, catalog, condor, certs, real data](module-04-scale-out.md) | 30 |
+| 1:45 | 5 | [Resources & chunk/reduction size](module-05-resources.md) | 15 |
+| 2:00 | 6 | [Checkpoints & restart](module-06-checkpoints-restart.md) | 20 |
+| 2:20 | | *Break* | 10 |
+| 2:30 | 7 | [Shipping results out: `result_postprocess`](module-07-result-postprocess.md) | 15 |
+| 2:45 | 8 | [Multiple processors](module-08-multiple-processors.md) | 10 |
+| 2:55 | 9 | [Wrap-up / where to get help](module-09-wrapup.md) | 5 |
+| | | **Total** | **180** |
+
+### Extra material
+
 | # | Module | Minutes |
 |---|---|---|
-| 0 | [Intro / motivation (lecture)](module-00-intro.md) | 15 |
-| 1 | [Setup & verify](module-01-setup.md) | 15 |
-| 2 | [Local distributor: map/reduce concepts](module-02-local-distributor.md) | 15 |
-| 3 | [Local TaskVine factory](module-03-local-factory.md) | 20 |
-| 4 | [Scale out: packaging, catalog, condor, certs, real data](module-04-scale-out.md) | 30 |
-| 5 | [Resources & chunk/reduction size](module-05-resources.md) | 15 |
-| 6 | [Checkpoints & restart](module-06-checkpoints-restart.md) | 20 |
-| 7 | [Shipping results out: `result_postprocess`](module-07-result-postprocess.md) | 15 |
-| 8 | [Multiple processors](module-08-multiple-processors.md) | 10 |
-| 9 | [`failure_proportion`](module-09-failure-proportion.md) | 15 |
-| 10 | [Wrap-up / where to get help](module-10-wrapup.md) | 10 |
-| | **Total** | **180** |
+| 10 | [`failure_proportion`](module-10-failure-proportion.md) | 15 |
 
-Reference material that is not counted in the 180 minutes lives in the
-[Appendix](appendix.md). After the session, [Module
-10](module-10-wrapup.md) lists where to get help.
+Reference material that is not counted in the session's 180 minutes lives in the
+[Appendix](appendix.md). [Module 9](module-09-wrapup.md) lists where to
+get help after the session.

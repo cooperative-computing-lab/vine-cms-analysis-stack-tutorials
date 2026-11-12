@@ -1,6 +1,10 @@
-# Module 9 - `failure_proportion`
+# Module 10 - `failure_proportion`
 
-**15 min**
+**15 min**, extra material
+
+!!! info "Extra material"
+    This module is not part of the 3-hour session. Work through it on your
+    own after the session, or during it if you get ahead.
 
 Real datasets have bad files, such as a replica that's gone, a site that's
 down, or a file that's truncated. This module shows what VineReduce does

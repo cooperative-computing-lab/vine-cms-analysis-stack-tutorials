@@ -144,7 +144,7 @@ You need to be logged in `glados` or any `crc` frontend to see the data.
   on the VAST filesystem that your login node mounts. Modules
   [2](module-02-local-distributor.md), [3](module-03-local-factory.md),
   [6](module-06-checkpoints-restart.md), and
-  [9](module-09-failure-proportion.md) run on the login node and read these.
+  [10](module-10-failure-proportion.md) run on the login node and read these.
 - `data/datasets_xrootd.json` points at
   `root://cmsxrootd.crc.nd.edu//store/user/btovar/tutorial/SingleMu_Run2012B/...`,
   the same files over xrootd, with no grid proxy needed. Modules

@@ -61,6 +61,6 @@ nav:
   - "6. Checkpoints & restart": module-06-checkpoints-restart.md
   - "7. result_postprocess": module-07-result-postprocess.md
   - "8. Multiple processors": module-08-multiple-processors.md
-  - "9. failure_proportion": module-09-failure-proportion.md
-  - "10. Wrap-up": module-10-wrapup.md
+  - "9. Wrap-up": module-09-wrapup.md
+  - "10. failure_proportion (extra)": module-10-failure-proportion.md
   - Appendix: appendix.md

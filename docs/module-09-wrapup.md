@@ -1,4 +1,6 @@
-# Module 10 - Where to get help
+# Module 9 - Where to get help
+
+**5 min**
 
 Questions after today are welcome, through any of these:
 

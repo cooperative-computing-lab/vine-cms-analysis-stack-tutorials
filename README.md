@@ -27,22 +27,29 @@ take up to 15 minutes each.
 
 ## Contents
 
+| Start | # | Module | Minutes |
+|---|---|---|---|
+| 0:00 | 0 | [Intro / motivation (lecture)](docs/module-00-intro.md) | 15 |
+| 0:15 | 1 | [Setup & verify](docs/module-01-setup.md) | 15 |
+| 0:30 | 2 | [Local distributor: map/reduce concepts](docs/module-02-local-distributor.md) | 15 |
+| 0:45 | 3 | [Local TaskVine factory](docs/module-03-local-factory.md) | 20 |
+| 1:05 | | *Break* | 10 |
+| 1:15 | 4 | [Scale out: packaging, catalog, condor, certs, real data](docs/module-04-scale-out.md) | 30 |
+| 1:45 | 5 | [Resources & chunk/reduction size](docs/module-05-resources.md) | 15 |
+| 2:00 | 6 | [Checkpoints & restart](docs/module-06-checkpoints-restart.md) | 20 |
+| 2:20 | | *Break* | 10 |
+| 2:30 | 7 | [Shipping results out: `result_postprocess`](docs/module-07-result-postprocess.md) | 15 |
+| 2:45 | 8 | [Multiple processors](docs/module-08-multiple-processors.md) | 10 |
+| 2:55 | 9 | [Wrap-up / where to get help](docs/module-09-wrapup.md) | 5 |
+| | | **Total** | **180** |
+
+### Extra material
+
 | # | Module | Minutes |
 |---|---|---|
-| 0 | [Intro / motivation (lecture)](docs/module-00-intro.md) | 15 |
-| 1 | [Setup & verify](docs/module-01-setup.md) | 15 |
-| 2 | [Local distributor: map/reduce concepts](docs/module-02-local-distributor.md) | 15 |
-| 3 | [Local TaskVine factory](docs/module-03-local-factory.md) | 20 |
-| 4 | [Scale out: packaging, catalog, condor, certs, real data](docs/module-04-scale-out.md) | 30 |
-| 5 | [Resources & chunk/reduction size](docs/module-05-resources.md) | 15 |
-| 6 | [Checkpoints & restart](docs/module-06-checkpoints-restart.md) | 20 |
-| 7 | [Shipping results out: `result_postprocess`](docs/module-07-result-postprocess.md) | 15 |
-| 8 | [Multiple processors](docs/module-08-multiple-processors.md) | 10 |
-| 9 | [`failure_proportion`](docs/module-09-failure-proportion.md) | 15 |
-| 10 | [Wrap-up / where to get help](docs/module-10-wrapup.md) | 10 |
-| | **Total** | **180** |
+| 10 | [`failure_proportion`](docs/module-10-failure-proportion.md) | 15 |
 
-Reference material outside the 180 minutes is in the
+Reference material outside the session's 180 minutes is in the
 [Appendix](docs/appendix.md).
 
 ## Building the site locally

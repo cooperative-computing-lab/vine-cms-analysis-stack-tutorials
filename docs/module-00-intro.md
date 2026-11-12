@@ -19,7 +19,7 @@ function applied to chunks of events, whose outputs get added together.
 Real analyses look like a much bigger version of this. For example,
 [`TopEFT/ttbarEFT`](https://github.com/TopEFT/ttbarEFT), a CMS top-quark
 EFT search, runs on this exact stack in production (see
-[Module 10](module-10-wrapup.md)). Thus, the trijet selection is a toy
+[Module 9](module-09-wrapup.md)). Thus, the trijet selection is a toy
 only with regards to its size, not its structure.
 
 The same analysis is written two ways in this tutorial, and you pick one in

@@ -113,7 +113,7 @@ files.
    (absolute paths, world-readable). Modules
    [2](module-02-local-distributor.md), [3](module-03-local-factory.md),
    [6](module-06-checkpoints-restart.md), and
-   [9](module-09-failure-proportion.md) run on the login node and read these.
+   [10](module-10-failure-proportion.md) run on the login node and read these.
 2. **`data/datasets_xrootd.json`**: the same files as
    `root://cmsxrootd.crc.nd.edu//store/user/btovar/tutorial/SingleMu_Run2012B/<dataset>/file_<i>.root`,
    with no grid proxy needed. Modules [4](module-04-scale-out.md),
