@@ -154,14 +154,14 @@ Use the same two terminals as in [Module 4](module-04-scale-out.md).
     ```bash
     conda activate vine-cms-analysis-stack
     vine_factory -T condor -C factory.json -E '--single-shot --connection-mode by_apparent_ip' \
-      --wrapper ./with_oasis_certs --wrapper-input with_oasis_certs
+      --wrapper ./with_oasis_certs --wrapper-input with_oasis_certs --wrapper-input proxy.pem
     ```
 
 === "Option B: pixi"
 
     ```bash
     pixi run vine_factory -T condor -C factory.json -E '--single-shot --connection-mode by_apparent_ip' \
-      --wrapper ./with_oasis_certs --wrapper-input with_oasis_certs
+      --wrapper ./with_oasis_certs --wrapper-input with_oasis_certs --wrapper-input proxy.pem
     ```
 
 !!! note "Added a `condor-requirements` line in Module 7?"

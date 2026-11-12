@@ -259,14 +259,14 @@ mounts `/project01`, so Module 4's `factory.json` works as it is.
         ```bash
         conda activate vine-cms-analysis-stack
         vine_factory -T condor -C factory.json -E '--single-shot --connection-mode by_apparent_ip' \
-          --wrapper ./with_oasis_certs --wrapper-input with_oasis_certs
+          --wrapper ./with_oasis_certs --wrapper-input with_oasis_certs --wrapper-input proxy.pem
         ```
 
     === "Option B: pixi"
 
         ```bash
         pixi run vine_factory -T condor -C factory.json -E '--single-shot --connection-mode by_apparent_ip' \
-          --wrapper ./with_oasis_certs --wrapper-input with_oasis_certs
+          --wrapper ./with_oasis_certs --wrapper-input with_oasis_certs --wrapper-input proxy.pem
         ```
 
 === "RDataFrame"
@@ -278,14 +278,14 @@ mounts `/project01`, so Module 4's `factory.json` works as it is.
         ```bash
         conda activate vine-cms-analysis-stack
         CPATH=/usr/include vine_factory -T condor -C factory.json -E '--single-shot --connection-mode by_apparent_ip' \
-          --wrapper ./with_oasis_certs --wrapper-input with_oasis_certs
+          --wrapper ./with_oasis_certs --wrapper-input with_oasis_certs --wrapper-input proxy.pem
         ```
 
     === "Option B: pixi"
 
         ```bash
         CPATH=/usr/include pixi run vine_factory -T condor -C factory.json -E '--single-shot --connection-mode by_apparent_ip' \
-          --wrapper ./with_oasis_certs --wrapper-input with_oasis_certs
+          --wrapper ./with_oasis_certs --wrapper-input with_oasis_certs --wrapper-input proxy.pem
         ```
 
     The skim converts each chunk with `ak.from_rdataframe`, which has ROOT

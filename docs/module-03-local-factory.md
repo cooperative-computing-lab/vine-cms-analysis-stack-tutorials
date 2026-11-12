@@ -302,7 +302,7 @@ Raw logs are a bit hard to read; therefore, turn two of them into plots:
 
     ```bash
     mkdir -p plots
-    vine_plot_performance -u s -s 5 -o plots/perf vine-run-info/most-recent/vine-logs/performance
+    vine_plot_performance -Tpng -u s -s 5 -o plots/perf vine-run-info/most-recent/vine-logs/performance
     vine_plot_taskgraph --output plots/taskgraph.pdf vine-run-info/most-recent/vine-logs/taskgraph
     ls plots/
     ```
@@ -311,14 +311,14 @@ Raw logs are a bit hard to read; therefore, turn two of them into plots:
 
     ```bash
     mkdir -p plots
-    pixi run vine_plot_performance -u s -s 5 -o plots/perf vine-run-info/most-recent/vine-logs/performance
+    pixi run vine_plot_performance -Tpng -u s -s 5 -o plots/perf vine-run-info/most-recent/vine-logs/performance
     pixi run vine_plot_taskgraph --output plots/taskgraph.pdf vine-run-info/most-recent/vine-logs/taskgraph
     ls plots/
     ```
 
 ```
-perf.tasks-accum.svg       perf.tasks.svg         perf.time-workers.svg  perf.workers-accum.svg  perf.workers.svg
-perf.tasks-capacities.svg  perf.time-manager.svg  perf.times-stacked.svg perf.transfer.svg       perf.workers-disk.svg
+perf.tasks-accum.png       perf.tasks.png         perf.time-workers.png  perf.workers-accum.png  perf.workers.png
+perf.tasks-capacities.png  perf.time-manager.png  perf.times-stacked.png perf.transfer.png       perf.workers-disk.png
 taskgraph.pdf
 ```
 
@@ -326,7 +326,7 @@ taskgraph.pdf
 `vine-run-info/most-recent/vine-logs/`, which is the graphviz source for the
 PDF.) `-u s` puts time in seconds, and
 `-s 5` samples the log every 5 seconds rather than the default 30, because
-this run was short.
+this run was short. `-Tpng` writes PNG images instead of the default SVG.
 
 These are image files on glados. Copy them to your laptop by running this **on
 your laptop**, not on glados:
@@ -335,7 +335,7 @@ your laptop**, not on glados:
 scp '<netid>@glados.crc.nd.edu:vine-cms-analysis-stack/examples/tutorial_nd/plots/*' .
 ```
 
-Open `perf.tasks-accum.svg` in a browser, which shows tasks submitted
+Open `perf.tasks-accum.png`, which shows tasks submitted
 vs. completed over time for all 94 of them (83 processor calls plus 11
 reductions). Then open `taskgraph.pdf`, which shows processor tasks feeding
 reductions, and reductions feeding the final one. This is a reduction tree

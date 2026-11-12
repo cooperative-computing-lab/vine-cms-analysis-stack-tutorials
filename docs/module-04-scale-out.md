@@ -9,7 +9,8 @@ than processes on the login node; and they find your manager **by name**,
 through a catalog server, as opposed to by host and port.
 
 Each of those changes needs one new piece: a packed environment, a manager
-name, a `vine_factory` in a second terminal, and a certificate wrapper.
+name, a `vine_factory` in a second terminal, and a certificate wrapper
+with a grid proxy.
 None of them touches the analysis itself, which is perhaps the main point
 of this module.
 
@@ -25,6 +26,19 @@ cd ~/vine-cms-analysis-stack/examples/tutorial_nd
 curl -fLO https://raw.githubusercontent.com/cooperative-computing-lab/vine-cms-analysis-stack-tutorials/main/scripts/with_oasis_certs
 chmod +x with_oasis_certs
 ```
+
+Then create a grid proxy, and copy it next to the wrapper as `proxy.pem`, so
+that the factory can send it along with each worker job:
+
+```bash
+voms-proxy-init -voms cms -rfc -valid 192:00
+cp /tmp/x509up_u$(id -u) proxy.pem
+```
+
+`voms-proxy-init` asks for your grid certificate's passphrase, and writes the
+proxy to `/tmp/x509up_u<your uid>`. The copy, `proxy.pem`, is a credential:
+keep it to yourself, and never commit it anywhere. If the proxy expires, run
+both commands again.
 
 ## What changed in the script
 
@@ -196,14 +210,14 @@ them.
     ```bash
     conda activate vine-cms-analysis-stack
     vine_factory -T condor -C factory.json -E '--single-shot --connection-mode by_apparent_ip' \
-      --wrapper ./with_oasis_certs --wrapper-input with_oasis_certs
+      --wrapper ./with_oasis_certs --wrapper-input with_oasis_certs --wrapper-input proxy.pem
     ```
 
 === "Option B: pixi"
 
     ```bash
     pixi run vine_factory -T condor -C factory.json -E '--single-shot --connection-mode by_apparent_ip' \
-      --wrapper ./with_oasis_certs --wrapper-input with_oasis_certs
+      --wrapper ./with_oasis_certs --wrapper-input with_oasis_certs --wrapper-input proxy.pem
     ```
 
 - `-T condor`: submit workers as HTCondor jobs.
@@ -212,9 +226,9 @@ them.
   `vine_worker`. `--single-shot`, as in Module 3, makes the worker exit as
   soon as its manager goes away; `--connection-mode by_apparent_ip` makes it
   connect to the manager's address as seen by the catalog.
-- `--wrapper ./with_oasis_certs --wrapper-input with_oasis_certs`: send the
-  wrapper script along with each job, and start the worker through it
-  (see [Certificates](#certificates) below).
+- `--wrapper ./with_oasis_certs --wrapper-input with_oasis_certs --wrapper-input proxy.pem`:
+  send the wrapper script and your proxy along with each job, and start the
+  worker through the wrapper (see [Certificates](#certificates) below).
 
 The factory prints its configuration, then one line per cycle:
 
@@ -248,7 +262,8 @@ seconds.)
 
 Further, the factory creates a scratch directory, `vine-factory-<uid>/`,
 with the HTCondor submit file it generated (`condor.submit`), the job log
-(`condor.logfile`), and copies of `vine_worker` and `with_oasis_certs`.
+(`condor.logfile`), and copies of `vine_worker`, `with_oasis_certs`, and
+`proxy.pem`.
 
 ## Watch it
 
@@ -432,19 +447,16 @@ starts, and goes through the following steps:
   don't), it writes the few CA certificates
   it needs, bundled inside the script, into a temporary directory and
   points `X509_CERT_DIR` there.
-- If a `proxy.pem` is in the job's directory, it sets `X509_USER_PROXY`
-  to it.
+- If a `proxy.pem` is in the job's directory (and it is, given the second
+  `--wrapper-input`), it sets `X509_USER_PROXY` to it.
 - Then it runs the rest of its command line (the `vine_worker`
   invocation) and cleans up.
 
-!!! note "Today's data doesn't need a proxy"
+!!! note "Today's data doesn't strictly need the proxy"
     `cmsxrootd.crc.nd.edu` served these files without a proxy when this
-    page was tested (from the login node), thus the proxy half of the
-    wrapper does nothing today. However, you would need it for
-    real, access-controlled CMS data; in that case, put your proxy next to
-    the wrapper and add it with another `--wrapper-input`. The wrapper is
-    in today's setup so that the command you practice is the same command
-    you would use later.
+    page was tested (from the login node). However, real, access-controlled
+    CMS data does need one, so the proxy is in today's setup so that the
+    command you practice is the same command you would use later.
 
 ## Clean up
 
