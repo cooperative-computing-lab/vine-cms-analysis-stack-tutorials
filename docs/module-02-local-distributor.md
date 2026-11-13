@@ -194,6 +194,44 @@ datasets, read from `/project01`):
 datasets_path = os.path.join(REPO_ROOT, "data", "datasets_vast.json")
 ```
 
+That file is plain JSON. Each top-level key is a dataset name, and under it
+`files` maps every file to the tree to read (`object_path`) and its number of
+events (`num_entries`). Here is a partial view of
+`data/datasets_vast.json` (the full file has five datasets, fifteen files in
+total):
+
+```json
+{
+  "SingleMu_Run2012B_193834-194270": {
+    "metadata": { "dataset": "SingleMu_Run2012B_193834-194270", "source": "..." },
+    "files": {
+      "/project01/.../SingleMu_Run2012B_193834-194270/file_0.root": {
+        "object_path": "Events",
+        "num_entries": 53733
+      },
+      "/project01/.../SingleMu_Run2012B_193834-194270/file_1.root": {
+        "object_path": "Events",
+        "num_entries": 222177
+      },
+      ...
+    }
+  },
+  "SingleMu_Run2012B_194271-194789": { ... },
+  ...
+}
+```
+
+This file is the output of coffea's own `preprocess()`, trimmed to the
+minimal shape; `vine_reduce` reads it but does not create it, and the only
+per-file field it needs is `num_entries`. Eventually, `vine_reduce` will learn
+to preprocess directly, so that this step goes away. Until then, to produce one for your own files,
+see [coffea's documentation on preprocessing](https://coffea-hep.readthedocs.io/en/latest/api/coffea.dataset_tools.preprocess.html).
+
+`num_entries` is where the exact **events** total in the progress bars
+comes from, and why `file_0.root[50000:53733]` ends where it does: that file
+has 53733 events. [Module 1](module-01-setup.md#data-descriptions) shows how
+to print it yourself.
+
 === "coffea"
 
     **2. A processor**, with one call per chunk, `events` in, and anything
